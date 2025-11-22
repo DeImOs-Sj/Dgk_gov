@@ -1,0 +1,27 @@
+{
+  "name": "@dkg/plugin-oauth",
+  "version": "0.0.2",
+  "description": "",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/*.ts src/**/*.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/*.ts src/**/*.ts --format cjs,esm --dts",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "mocha --loader ../../node_modules/tsx/dist/loader.mjs 'tests/**/*.spec.ts'"
+  },
+  "dependencies": {
+    "@dkg/plugin-swagger": "^0.0.2",
+    "@dkg/plugins": "^0.0.2",
+    "@modelcontextprotocol/sdk": "^1.17.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@dkg/eslint-config": "*",
+    "@dkg/typescript-config": "*",
+    "@types/uuid": "^10.0.0",
+    "tsup": "^8.5.0"
+  }
+}

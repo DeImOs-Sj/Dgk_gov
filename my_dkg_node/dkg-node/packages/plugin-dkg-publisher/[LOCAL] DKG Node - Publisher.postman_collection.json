@@ -1,0 +1,208 @@
+{
+  "info": {
+    "_postman_id": "4ff764ea-7a4e-4eb4-9e12-0e366d4f731e",
+    "name": "[LOCAL] DKG Node - Publisher",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "4545311"
+  },
+  "item": [
+    {
+      "name": "[DKG-PUBLISHER] Create Knowledge asset",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"content\": {\n        \"@context\": \"https://schema.org\",\n        \"@type\": \"Movie\",\n        \"name\": \"Inception\",\n        \"director\": {\n            \"@type\": \"Person\",\n            \"name\": \"Christopher Nolan\"\n        },\n        \"datePublished\": \"2010-07-16\",\n        \"genre\": \"Science Fiction\",\n        \"aggregateRating\": {\n            \"@type\": \"AggregateRating\",\n            \"ratingValue\": \"8.8\",\n            \"ratingCount\": \"2400000\"\n        }\n    },\n    \"metadata\": {\n        \"source\": \"test-publisher\",\n        \"sourceId\": \"test-publisher-id\"\n    },\n    \"publishOptions\": {\n        \"privacy\": \"private\",\n        \"priority\": 75,\n        \"epochs\": 6,\n        \"maxAttempts\": 3\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/assets",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "assets"]
+        },
+        "description": "Generated from cURL: curl -X POST http://localhost:8900/api/knowledge/assets \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\n      \"content\": {\n        \"@context\": \"https://schema.org\",\n        \"@type\": \"Dataset\", \n        \"name\": \"Test Knowledge Asset\",\n        \"description\": \"Sample dataset for testing DKG publishing\",\n        \"creator\": \"Test User\"\n      },\n      \"contentType\": \"inline\",\n      \"metadata\": {\n        \"source\": \"postman-test\",\n        \"sourceId\": \"test-asset-001\"\n      },\n      \"publishOptions\": {\n        \"privacy\": \"private\",\n        \"priority\": 75,\n        \"epochs\": 2,\n        \"maxAttempts\": 3\n      }\n    }'"
+      },
+      "response": []
+    },
+    {
+      "name": "[DKG-PUBLISHER] Get Knowledge asset status",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/assets/status/1",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "assets", "status", "1"]
+        },
+        "description": "Generated from cURL: curl -X GET http://localhost:8900/api/knowledge/assets/1 \\\n    -H \"Content-Type: application/json\""
+      },
+      "response": []
+    },
+    {
+      "name": "[DKG-PUBLISHER] Get queue statistics",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/metrics/queue",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "metrics", "queue"]
+        },
+        "description": "Generated from cURL: curl -X GET http://localhost:8900/api/knowledge/metrics/queue \\\n    -H \"Content-Type: application/json\""
+      },
+      "response": []
+    },
+    {
+      "name": "[DKG-PUBLISHER] Get wallet statistics",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/metrics/wallets",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "metrics", "wallets"]
+        },
+        "description": "Generated from cURL: curl -X GET http://localhost:8900/api/knowledge/metrics/wallets \\\n    -H \"Content-Type: application/json\""
+      },
+      "response": []
+    },
+    {
+      "name": "[DKG-PUBLISHER] Query",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{uiToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"query\": \"SELECT ?s WHERE { ?s a <http://schema.org/Movie> . }\",\n    \"queryType\": \"SELECT\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/query",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "query"]
+        },
+        "description": "Generated from cURL: curl -X POST http://localhost:9200/api/dkg/query \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"query\": \"PREFIX scan: <https://tracelabs.io/scan-ontology.json#> SELECT ?audit ?factoryName ?auditGuid WHERE { ?audit a scan:Audit ; scan:factoryName ?factoryName ; scan:auditGuid ?auditGuid . } LIMIT 10\",\n    \"queryType\": \"SELECT\",\n    \"validate\": true\n  }'"
+      },
+      "response": []
+    },
+    {
+      "name": "[DKG-PUBLISHER] Get asset",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{endpoint}}/api/dkg/assets?ual=did:dkg:otp:20430/0xcdb28e93ed340ec10a71bba00a31dbfcf1bd5d37/347048",
+          "host": ["{{endpoint}}"],
+          "path": ["api", "dkg", "assets"],
+          "query": [
+            {
+              "key": "ual",
+              "value": "did:dkg:otp:20430/0xcdb28e93ed340ec10a71bba00a31dbfcf1bd5d37/347048"
+            }
+          ]
+        },
+        "description": "Generated from cURL: curl -X GET \"http://localhost:9200/api/dkg/assets/did:dkg:otp:20430/0x1234567890abcdef/123456?contentType=all&includeMetadata=true\""
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "e04f9ec5-96b8-40b5-8d5f-cc00f04d2716",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "endpoint",
+      "value": ""
+    },
+    {
+      "key": "uiToken",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{
+  "extends": "@dkg/typescript-config/base.json"
+}

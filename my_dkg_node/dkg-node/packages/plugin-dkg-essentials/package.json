@@ -1,0 +1,40 @@
+{
+  "name": "@dkg/plugin-dkg-essentials",
+  "version": "0.0.3",
+  "description": "",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.js"
+    },
+    "./createFsBlobStorage": {
+      "types": "./dist/createFsBlobStorage.d.ts",
+      "import": "./dist/createFsBlobStorage.mjs",
+      "require": "./dist/createFsBlobStorage.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup src/*.ts src/**/*.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/*.ts src/**/*.ts --format cjs,esm --dts",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "mocha --loader ../../node_modules/tsx/dist/loader.mjs 'tests/**/*.spec.ts'"
+  },
+  "dependencies": {
+    "@dkg/plugin-swagger": "^0.0.2",
+    "@dkg/plugins": "^0.0.2",
+    "busboy": "^1.6.0"
+  },
+  "devDependencies": {
+    "@dkg/eslint-config": "*",
+    "@dkg/typescript-config": "*",
+    "@types/busboy": "^1.5.4",
+    "tsup": "^8.5.0"
+  }
+}

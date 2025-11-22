@@ -1,0 +1,19 @@
+{
+  "name": "@dkg/expo-forcegraph",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./index.js",
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "react-force-graph": "^1.48.0"
+  },
+  "peerDependencies": {
+    "expo": "^53.0.0"
+  },
+  "devDependencies": {
+    "@dkg/eslint-config": "*",
+    "tsup": "^8.5.0"
+  }
+}

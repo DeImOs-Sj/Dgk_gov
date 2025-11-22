@@ -1,0 +1,12 @@
+{
+  "name": "internal",
+  "version": "0.0.2",
+  "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@dkg/typescript-config": "*",
+    "@turbo/gen": "^2.5.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "km:setup": "node setup.js",
+    "km:migrate": "npm run db:migrate",
+    "km:worker": "npm run worker",
+    "km:dashboard": "npm run dashboard",
+    "km:status": "node -e \"console.log('Use the /api/knowledge/health endpoint for status')\"",
+    "km:docker:up": "docker-compose -f docker-compose.knowledge-manager.yml up -d",
+    "km:docker:down": "docker-compose -f docker-compose.knowledge-manager.yml down"
+  },
+  "dependencies": {
+    "@dkg/plugin-dkg-publisher": "^1.0.0",
+    "bullmq": "^4.15.0",
+    "ioredis": "^5.3.2",
+    "mysql2": "^3.6.5",
+    "drizzle-orm": "^0.29.0"
+  }
+}

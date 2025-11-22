@@ -1,0 +1,30 @@
+{
+  "name": "@dkg/webpage2dkg",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/*.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/*.ts --format cjs,esm --dts",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "mocha --loader ../../node_modules/tsx/dist/loader.mjs 'tests/**/*.spec.ts'"
+  },
+  "dependencies": {
+    "@dkg/plugin-swagger": "^0.0.2",
+    "@dkg/plugins": "^0.0.2",
+    "cheerio": "^1.1.2",
+    "jsonld": "^8.3.3",
+    "n3": "^1.26.0",
+    "playwright": "^1.48.0"
+  },
+  "devDependencies": {
+    "@dkg/eslint-config": "*",
+    "@dkg/typescript-config": "*",
+    "@types/jsonld": "^1.5.15",
+    "@types/n3": "^1.26.0",
+    "tsup": "^8.5.0"
+  }
+}

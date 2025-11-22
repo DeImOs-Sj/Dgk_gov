@@ -1,0 +1,11 @@
+{
+  "extensions": ["ts"],
+  "timeout": 60000,
+  "exit": true,
+  "reporter": "mochawesome",
+  "reporter-option": [
+    "reportDir=../../mochawesome-report",
+    "reportTitle=DKG Node Integration Tests",
+    "reportPageTitle=Integration Tests Report"
+  ]
+}
