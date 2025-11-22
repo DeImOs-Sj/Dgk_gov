@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { initializeDatabase } from './database/db.js';
 import proposalsRouter from './routes/proposals.js';
 import reportsRouter from './routes/reports.js';
+import premiumReportsRouter from './routes/premium-reports.js';
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.get('/', (req, res) => {
     endpoints: {
       proposals: '/api/proposals',
       reports: '/api/reports',
+      premiumReports: '/api/premium-reports',
       health: '/health'
     }
   });
@@ -59,6 +61,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/proposals', proposalsRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/premium-reports', premiumReportsRouter);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -98,6 +101,16 @@ app.listen(PORT, () => {
   console.log('   POST /api/reports/submit         - Submit new report');
   console.log('   POST /api/reports/:id/verify     - Verify report with AI');
   console.log('   POST /api/reports/:id/publish    - Publish report to DKG');
+  console.log('\n   🔐 X402 Premium Reports:');
+  console.log('   GET  /api/premium-reports/auth-message/:wallet - Generate auth message');
+  console.log('   GET  /api/premium-reports/proposal/:index      - Get premium reports');
+  console.log('   GET  /api/premium-reports/:id                  - Get specific report (X402)');
+  console.log('   POST /api/premium-reports/submit               - Submit premium report');
+  console.log('   POST /api/premium-reports/:id/publish          - Publish to DKG');
+  console.log('   POST /api/premium-reports/:id/request-access   - Request access (payment)');
+  console.log('   GET  /api/premium-reports/:id/payment-message  - Get payment message');
+  console.log('   GET  /api/premium-reports/user/my-access       - Get my access records');
+  console.log('   GET  /api/premium-reports/ual/:ual/linked-reports - Get reports by UAL');
   console.log('='.repeat(60) + '\n');
 });
 

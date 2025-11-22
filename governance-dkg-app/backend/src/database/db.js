@@ -120,8 +120,9 @@ export const reportQueries = {
     const stmt = db.prepare(`
       INSERT INTO reports (
         referendum_index, submitter_wallet, report_name, jsonld_data,
-        data_size_bytes, required_payment_trac, payment_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        data_size_bytes, required_payment_trac, payment_address,
+        is_premium, premium_price_trac, author_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     return stmt.run(
@@ -131,7 +132,10 @@ export const reportQueries = {
       report.jsonld_data,
       report.data_size_bytes,
       report.required_payment_trac,
-      report.payment_address
+      report.payment_address,
+      report.is_premium || 0,
+      report.premium_price_trac || null,
+      report.author_type || 'community'
     );
   },
 
@@ -139,6 +143,18 @@ export const reportQueries = {
   getByProposal: (referendumIndex) => {
     const db = getDatabase();
     return db.prepare('SELECT * FROM reports WHERE referendum_index = ? ORDER BY submitted_at DESC').all(referendumIndex);
+  },
+
+  // Get premium reports for a proposal
+  getPremiumByProposal: (referendumIndex) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM reports WHERE referendum_index = ? AND is_premium = 1 ORDER BY submitted_at DESC').all(referendumIndex);
+  },
+
+  // Get report by ID
+  getById: (reportId) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM reports WHERE report_id = ?').get(reportId);
   },
 
   // Update verification status
@@ -178,10 +194,108 @@ export const reportQueries = {
   }
 };
 
+// Premium Report Access CRUD operations
+export const premiumAccessQueries = {
+  // Request access to premium report
+  requestAccess: (access) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO premium_report_access (
+        report_id, user_wallet, payment_signature, payment_message,
+        paid_amount_trac, payment_tx_hash
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    return stmt.run(
+      access.report_id,
+      access.user_wallet,
+      access.payment_signature,
+      access.payment_message,
+      access.paid_amount_trac,
+      access.payment_tx_hash || null
+    );
+  },
+
+  // Grant access after signature verification
+  grantAccess: (accessId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE premium_report_access
+      SET signature_verified = 1, access_granted = 1, access_granted_at = CURRENT_TIMESTAMP
+      WHERE access_id = ?
+    `);
+    return stmt.run(accessId);
+  },
+
+  // Check if user has access to a report
+  hasAccess: (reportId, userWallet) => {
+    const db = getDatabase();
+    const result = db.prepare(`
+      SELECT * FROM premium_report_access
+      WHERE report_id = ? AND user_wallet = ? AND access_granted = 1
+    `).get(reportId, userWallet);
+    return !!result;
+  },
+
+  // Get access record
+  getAccessRecord: (reportId, userWallet) => {
+    const db = getDatabase();
+    return db.prepare(`
+      SELECT * FROM premium_report_access
+      WHERE report_id = ? AND user_wallet = ?
+    `).get(reportId, userWallet);
+  },
+
+  // Get all access records for a report
+  getAccessByReport: (reportId) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM premium_report_access WHERE report_id = ? ORDER BY requested_at DESC').all(reportId);
+  },
+
+  // Get all access records for a user
+  getAccessByUser: (userWallet) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM premium_report_access WHERE user_wallet = ? ORDER BY requested_at DESC').all(userWallet);
+  }
+};
+
+// UAL to Premium Report Mapping CRUD operations
+export const ualMappingQueries = {
+  // Create mapping
+  createMapping: (proposalUAL, reportId, reportUAL) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO ual_premium_reports (proposal_ual, report_id, report_ual)
+      VALUES (?, ?, ?)
+    `);
+    return stmt.run(proposalUAL, reportId, reportUAL);
+  },
+
+  // Get all premium reports for a proposal UAL
+  getByProposalUAL: (proposalUAL) => {
+    const db = getDatabase();
+    return db.prepare(`
+      SELECT m.*, r.*
+      FROM ual_premium_reports m
+      JOIN reports r ON m.report_id = r.report_id
+      WHERE m.proposal_ual = ?
+      ORDER BY m.created_at DESC
+    `).all(proposalUAL);
+  },
+
+  // Get mapping by report ID
+  getByReportId: (reportId) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM ual_premium_reports WHERE report_id = ?').get(reportId);
+  }
+};
+
 export default {
   getDatabase,
   initializeDatabase,
   closeDatabase,
   proposalQueries,
-  reportQueries
+  reportQueries,
+  premiumAccessQueries,
+  ualMappingQueries
 };

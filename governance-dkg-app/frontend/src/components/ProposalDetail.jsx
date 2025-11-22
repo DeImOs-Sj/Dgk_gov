@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import WalletConnect from './WalletConnect';
+import PremiumReports from './PremiumReports';
+import SubmitPremiumReport from './SubmitPremiumReport';
 
 function ProposalDetail() {
   const { index } = useParams();
@@ -21,6 +24,14 @@ function ProposalDetail() {
   const [publishProgress, setPublishProgress] = useState([]);
   const [showProgress, setShowProgress] = useState(false);
   const [chatAPIAvailable, setChatAPIAvailable] = useState(false);
+
+  // Wallet authentication state
+  const [userWallet, setUserWallet] = useState(null);
+  const [authSignature, setAuthSignature] = useState(null);
+  const [authMessage, setAuthMessage] = useState(null);
+
+  // Premium reports refresh trigger
+  const [premiumReportsRefreshKey, setPremiumReportsRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchProposal();
@@ -70,6 +81,29 @@ function ProposalDetail() {
     navigator.clipboard.writeText(text);
     setSuccess('Copied to clipboard!');
     setTimeout(() => setSuccess(null), 2000);
+  };
+
+  // Handle wallet connection
+  const handleWalletConnected = (wallet, signature, message) => {
+    setUserWallet(wallet);
+    setAuthSignature(signature);
+    setAuthMessage(message);
+    console.log('Wallet connected:', wallet);
+  };
+
+  // Handle wallet disconnection
+  const handleWalletDisconnected = () => {
+    setUserWallet(null);
+    setAuthSignature(null);
+    setAuthMessage(null);
+    console.log('Wallet disconnected');
+  };
+
+  // Handle premium report submission
+  const handlePremiumReportSubmitted = (data) => {
+    console.log('Premium report submitted:', data);
+    // Trigger refresh of premium reports list
+    setPremiumReportsRefreshKey(prev => prev + 1);
   };
 
   const publishToDKG = async () => {
@@ -319,6 +353,12 @@ function ProposalDetail() {
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
 
+      {/* Wallet Connection */}
+      <WalletConnect
+        onWalletConnected={handleWalletConnected}
+        onWalletDisconnected={handleWalletDisconnected}
+      />
+
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
           <div>
@@ -512,10 +552,36 @@ function ProposalDetail() {
         </div>
       )}
 
+      {/* Submit Premium Report Section */}
+      {proposal.ual && (
+        <div className="card">
+          <SubmitPremiumReport
+            proposalIndex={proposal.referendum_index}
+            userWallet={userWallet}
+            authSignature={authSignature}
+            authMessage={authMessage}
+            onReportSubmitted={handlePremiumReportSubmitted}
+          />
+        </div>
+      )}
+
+      {/* Premium Reports Section */}
+      {proposal.ual && (
+        <div className="card">
+          <PremiumReports
+            proposalIndex={proposal.referendum_index}
+            userWallet={userWallet}
+            authSignature={authSignature}
+            authMessage={authMessage}
+            refreshKey={premiumReportsRefreshKey}
+          />
+        </div>
+      )}
+
       {/* Existing Reports */}
       {reports.length > 0 && (
         <div className="card">
-          <h2>Existing Reports ({reports.length})</h2>
+          <h2>Community Reports ({reports.length})</h2>
           <div className="reports-section">
             {reports.map((report) => (
               <div key={report.report_id} className="report-item">
