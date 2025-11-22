@@ -1,0 +1,29 @@
+{
+  "@context": {
+    "schema": "https://schema.org/",
+    "prov": "http://www.w3.org/ns/prov#"
+  },
+  "@graph": [
+    {
+      "@type": ["prov:Entity", "schema:Article"],
+      "@id": "https://example.com/article/kilt-dip-testnet-launch",
+
+      "schema:headline": "KILT DIP Launches on Testnet",
+      "schema:description": "The KILT Decentralized Identity Provider successfully launched on testnet, enabling cross-chain identity verification across 3 parachains.",
+
+      "schema:about": {
+        "@id": "did:dkg:otp:20430/0xcdb28e93ed340ec10a71bba00a31dbfcf1bd5d37/396116"
+      },
+
+      "schema:url": "https://example.com/article/kilt-dip-testnet-launch",
+
+      "schema:datePublished": "2025-09-15T14:30:00Z",
+      "prov:generatedAtTime": "2025-09-15T14:30:00Z",
+
+      "schema:author": {
+        "@type": "schema:Person",
+        "schema:name": "KILT Protocol"
+      }
+    }
+  ]
+}

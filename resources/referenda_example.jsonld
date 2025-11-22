@@ -1,0 +1,63 @@
+{
+  "@context": "../schemas/polkadot-opengov-proposal-schema.json",
+  "@type": "GovernanceProposal",
+  "@id": "polkadot:referendum:5",
+
+  "referendumIndex": 5,
+  "title": "KILT Decentralized Identity Provider (DIP) - Polkadot Medium Spender Proposal",
+  "summary": "Main objective/purpose: Develop and implement the KILT Decentralized Identity Provider (DIP) to enable cross-chain identity authentication using on-chain and off-chain mechanisms.\nFunding amounts and beneficiaries: Requesting 614,770,000,000 units (exact denomination unclear) with beneficiary address 5GsEreBaF7TmapuFL2RoV8JfPnX6Gj9iVw33K1YAoEJ1vN3i (61.48K DOT).\nTechnical changes or implementations: Create pallets and crates for identity provider infrastructure, enabling any chain to act as an identity provider and fostering a competitive identity ecosystem.\nEcosystem impact: Promotes decentralization and competition in identity services, allowing parachains to integrate DIP and interoperate via XCM v3.\nKey stakeholders or beneficiaries: BOTLabs GmbH (developer), parachains integrating DIP, and the broader Polkadot ecosystem.",
+
+  "status": "Executed",
+  "origin": "medium_spender",
+
+  "proposer": {
+    "@type": "schema:Person",
+    "@id": "polkadot:account:15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F",
+    "schema:identifier": "15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F"
+  },
+
+  "beneficiary": {
+    "@type": "schema:Person",
+    "@id": "polkadot:account:15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F",
+    "schema:identifier": "15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F"
+  },
+
+  "votingResults": {
+    "@type": "schema:VoteAction",
+    "ayesAmount": "96485356831129194",
+    "naysAmount": "28598256206017633"
+  },
+
+  "treasurySpend": [
+    {
+      "@type": "schema:MonetaryGrant",
+      "schema:amount": {
+        "@type": "schema:MonetaryAmount",
+        "schema:value": "614770000000000",
+        "schema:currency": "DOT"
+      },
+      "schema:recipient": {
+        "@type": "schema:Person",
+        "@id": "polkadot:account:15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F",
+        "schema:identifier": "15oXzySe6tjF2MumHfUodH8pFQWjy2hraRmXUJXXMKKY6p3F"
+      }
+    }
+  ],
+
+  "requestedAmount": {
+    "@type": "schema:MonetaryAmount",
+    "schema:value": "61477.0",
+    "schema:currency": "DOT"
+  },
+
+  "treasuryProposalId": 312,
+
+  "createdBlock": 15979848,
+  "latestBlock": 16338680,
+
+  "createdAt": "2025-07-31T03:33:27.948746Z",
+  "updatedAt": "2025-10-06T12:51:07.123Z",
+
+  "polkassemblyUrl": "https://polkadot.polkassembly.io/referenda/5",
+  "subscanUrl": "https://polkadot.subscan.io/referenda/5"
+}

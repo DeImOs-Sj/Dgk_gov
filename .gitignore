@@ -1,0 +1,62 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Environment files
+.env.local
+.env.*.local
+*.env.backup
+.env
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Redis dumps
+dump.rdb
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# DKG Node specific
+my_dkg_node/dkg-node/apps/agent/ot_hack.db
+my_dkg_node/dkg-node/apps/agent/data/
+my_dkg_node/dkg-node/dkg-engine/*/data/
+
+# Build outputs
+dist/
+build/
+.turbo/
+
+# Utility scripts (keep only essential ones)
+restart-*.sh
+start-*.sh
+fix-*.sh
+
+# Documentation (temporary)
+*_PROMPT.md
+CURRENT_STATUS.md
+PORT_CONFIGURATION.md
+START_DEV_MODE.md
+FIX_*.md
+CHAT_*.md
