@@ -53,10 +53,13 @@ Before submitting or purchasing reports, you must connect your wallet:
    - **Report Data (JSON-LD)** (required): Your analysis in JSON-LD format
      - Click "Load Example" to see a template
    - **Make this a premium report**: Check if you want to charge for access
+   - **Payee Wallet Address** (required for premium): Wallet address that will receive payments
+     - Auto-filled with your connected wallet
+     - Can be changed to any valid wallet address
    - **Premium Price (TRAC)**: Set your price (e.g., 10 TRAC)
 5. Click "Submit Premium Report"
-6. Wait for AI verification
-7. Your report will be published to the DKG upon approval
+6. Wait for AI verification (automatic)
+7. Your report will be **automatically published to the DKG** upon successful verification
 
 **Example Premium Report Structure:**
 
@@ -135,16 +138,21 @@ The premium reports use the X402 micropayment protocol:
 4. **Verification**: Backend verifies the signature matches the wallet
 5. **Access Grant**: User receives immediate access to the report
 
-## Report Verification
+## Report Verification and Auto-Publishing
 
-All submitted reports undergo AI verification:
+All submitted reports undergo AI verification and automatic DKG publication:
 
 1. **Automatic Verification**: AI agent analyzes report quality and relevance
 2. **Status Updates**:
    - `pending`: Awaiting verification
-   - `verified`: Approved and published to DKG
+   - `verified`: Approved - triggers automatic DKG publication
    - `rejected`: Failed verification (with reasoning)
-3. **DKG Publication**: Verified reports are automatically published to the DKG
+3. **Automatic DKG Publication**:
+   - Once verified, the report is **automatically published to the DKG**
+   - Similar to how proposals are published
+   - Creates a UAL (Universal Asset Locator) for the premium report
+   - Links the report to the parent proposal via UAL mapping
+   - Updates the report with DKG explorer URL
 
 ## API Endpoints
 
@@ -153,14 +161,20 @@ All submitted reports undergo AI verification:
 POST /api/premium-reports/submit
 Headers:
   - x-wallet-address: Your wallet address
-  - x-wallet-signature: Signature of auth message (Base64)
+  - x-wallet-signature: Signature of auth message
   - x-wallet-message: Auth message (Base64 encoded)
 Body:
   - referendum_index: Proposal ID
-  - report_name: Report title
+  - report_name: Report title (optional)
   - jsonld_data: JSON-LD report content
   - is_premium: true/false
-  - premium_price_trac: Price in TRAC
+  - premium_price_trac: Price in TRAC (required if is_premium=true)
+  - payee_wallet: Wallet address to receive payments (required if is_premium=true)
+Response:
+  - success: true/false
+  - reportId: Generated report ID
+  - verification_pending: true
+  - auto_publish_enabled: true
 ```
 
 ### Get Premium Reports for Proposal

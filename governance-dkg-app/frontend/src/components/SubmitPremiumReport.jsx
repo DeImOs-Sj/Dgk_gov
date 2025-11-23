@@ -13,10 +13,18 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
   const [jsonldData, setJsonldData] = useState('');
   const [isPremium, setIsPremium] = useState(true);
   const [premiumPrice, setPremiumPrice] = useState('10');
+  const [payeeWallet, setPayeeWallet] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  // Auto-fill payee wallet with connected wallet
+  React.useEffect(() => {
+    if (userWallet && !payeeWallet) {
+      setPayeeWallet(userWallet);
+    }
+  }, [userWallet]);
 
   // Create authentication headers
   const getAuthHeaders = () => {
@@ -42,46 +50,109 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
         "polkadot": "https://polkadot.network/governance/",
         "dkg": "https://dkg.origintrail.io/"
       },
-      "@type": "dkg:PremiumReport",
+      "@type": "schema:Report",
       "@id": `polkadot:referendum:${proposalIndex}:premium-report:${Date.now()}`,
-      "schema:name": reportName || "Premium Analysis Report",
-      "schema:description": "Comprehensive analysis of the proposal with expert insights and recommendations.",
+      "schema:name": reportName || "Expert Analysis: Proposal Impact & Feasibility Assessment",
+      "schema:description": "Comprehensive premium analysis providing expert insights on technical feasibility, financial implications, and strategic recommendations for the governance proposal.",
       "schema:about": `polkadot:referendum:${proposalIndex}`,
-      "dkg:reportType": "premium",
-      "dkg:analysis": {
-        "executiveSummary": "This premium report provides in-depth analysis of the proposal's impact, feasibility, and alignment with community goals.",
-        "technicalAssessment": {
-          "feasibility": "High",
-          "complexity": "Medium",
-          "risks": ["Risk 1", "Risk 2"],
-          "opportunities": ["Opportunity 1", "Opportunity 2"]
-        },
-        "financialAnalysis": {
-          "budgetAssessment": "The proposed budget is reasonable for the scope of work",
-          "costBreakdown": {
-            "development": "60%",
-            "testing": "20%",
-            "deployment": "20%"
-          },
-          "roi": "Expected high return on investment"
-        },
-        "recommendations": [
-          "Recommendation 1: Detailed suggestion for improvement",
-          "Recommendation 2: Additional consideration for implementation"
-        ]
-      },
-      "dkg:dataQuality": {
-        "sources": ["Source 1", "Source 2", "Source 3"],
-        "methodology": "Expert analysis combined with quantitative data",
-        "confidence": "High"
-      },
+      "schema:dateCreated": new Date().toISOString(),
       "schema:author": {
         "@type": "schema:Person",
         "schema:identifier": userWallet,
         "schema:name": "Expert Analyst"
       },
-      "schema:dateCreated": new Date().toISOString(),
-      "schema:version": "1.0"
+      "schema:version": "1.0",
+      "schema:keywords": ["governance", "analysis", "premium", "expert-review"],
+      "analysis": {
+        "executiveSummary": "This premium report provides in-depth analysis of the proposal's technical feasibility, budget efficiency, timeline viability, and potential impact on the Polkadot ecosystem. Our assessment indicates strong alignment with community goals.",
+        "technicalAssessment": {
+          "feasibilityRating": "High (8/10)",
+          "complexityLevel": "Medium",
+          "technicalRisks": [
+            "Integration complexity with existing parachain infrastructure",
+            "Potential scalability concerns with proposed transaction volume"
+          ],
+          "technicalOpportunities": [
+            "Significant improvement in cross-chain communication efficiency",
+            "Novel approach to consensus mechanism optimization"
+          ],
+          "recommendedMitigations": [
+            "Implement comprehensive stress testing before mainnet deployment",
+            "Establish monitoring infrastructure for early issue detection"
+          ]
+        },
+        "financialAnalysis": {
+          "budgetAssessment": "The proposed budget of X DOT is reasonable and well-structured for the project scope, with appropriate allocation across development phases.",
+          "costBreakdown": {
+            "development": "60% - Core development and testing",
+            "security": "15% - Audits and security review",
+            "testing": "15% - QA and community testing",
+            "deployment": "10% - Mainnet deployment and monitoring"
+          },
+          "valueProposition": "Expected ROI of 3-5x within 12 months through increased network efficiency and reduced operational costs",
+          "budgetRisks": ["Potential overrun in security audit phase", "Extended testing period if issues discovered"],
+          "financialRecommendations": [
+            "Establish 15% contingency reserve for unforeseen challenges",
+            "Implement milestone-based funding release mechanism"
+          ]
+        },
+        "timelineAnalysis": {
+          "proposedDuration": "6 months",
+          "feasibilityAssessment": "Realistic with appropriate resource allocation",
+          "criticalPath": ["Smart contract development", "Security audits", "Integration testing"],
+          "risks": ["Dependency on third-party audit availability", "Potential delays in community feedback cycles"]
+        },
+        "impactAssessment": {
+          "ecosystemBenefits": [
+            "Enhanced developer experience and tooling",
+            "Improved network efficiency and lower transaction costs",
+            "Stronger competitive position in multi-chain landscape"
+          ],
+          "stakeholderImpact": {
+            "validators": "Reduced operational complexity, improved rewards distribution",
+            "developers": "Better tooling and documentation, faster development cycles",
+            "tokenHolders": "Increased network value, improved governance participation"
+          },
+          "longTermValue": "Establishes foundation for future protocol enhancements and maintains technological competitiveness"
+        },
+        "riskAnalysis": {
+          "technical": "Medium - Manageable with proper testing and staged rollout",
+          "financial": "Low - Budget is conservative and well-justified",
+          "governance": "Low - Strong community support and clear value proposition",
+          "operational": "Medium - Requires ongoing maintenance and monitoring post-deployment"
+        },
+        "recommendations": [
+          "APPROVE with conditions: Implement recommended security measures and establish milestone-based funding",
+          "Require monthly progress reports to governance committee",
+          "Mandate comprehensive audit before mainnet deployment",
+          "Establish community testing phase before full rollout",
+          "Create contingency plan for identified technical risks"
+        ]
+      },
+      "methodology": {
+        "researchApproach": "Mixed methods combining quantitative analysis, expert interviews, and comparative ecosystem research",
+        "dataSources": [
+          "Proposal documentation and technical specifications",
+          "Team background and prior project analysis",
+          "Comparable projects in Polkadot and other ecosystems",
+          "Community feedback and governance discussions",
+          "Independent security assessment"
+        ],
+        "expertiseApplied": [
+          "Blockchain architecture and protocol design",
+          "Financial modeling and budget analysis",
+          "Project management and timeline estimation",
+          "Ecosystem strategy and competitive analysis"
+        ],
+        "confidenceLevel": "High (85%) - Based on comprehensive analysis and strong supporting evidence"
+      },
+      "metadata": {
+        "reportType": "premium",
+        "category": "governance-analysis",
+        "confidentiality": "public",
+        "language": "en",
+        "jurisdiction": "Global - Polkadot Ecosystem"
+      }
     };
 
     setJsonldData(JSON.stringify(exampleReport, null, 2));
@@ -109,6 +180,11 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
       return;
     }
 
+    if (isPremium && !payeeWallet) {
+      setError('Please provide a payee wallet address (who will receive payments)');
+      return;
+    }
+
     // Validate JSON
     let parsedData;
     try {
@@ -125,6 +201,7 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
     try {
       setSubmitting(true);
 
+      // Step 1: Submit the report
       const response = await axios.post(
         `${API_BASE_URL}/api/premium-reports/submit`,
         {
@@ -132,27 +209,63 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
           report_name: reportName || `Premium Report ${Date.now()}`,
           jsonld_data: jsonldData,
           is_premium: isPremium,
-          premium_price_trac: isPremium ? parseFloat(premiumPrice) : null
+          premium_price_trac: isPremium ? parseFloat(premiumPrice) : null,
+          payee_wallet: isPremium ? payeeWallet : null
         },
         { headers: getAuthHeaders() }
       );
 
       if (response.data.success) {
-        setSuccess(`✅ Premium report submitted successfully! Report ID: ${response.data.reportId}`);
+        const reportId = response.data.report.report_id;
+        setSuccess(`✅ Premium report submitted successfully! Processing...`);
 
-        // Reset form
-        setReportName('');
-        setJsonldData('');
-        setPremiumPrice('10');
-        setShowForm(false);
+        // Step 2: Auto-trigger verification
+        setTimeout(async () => {
+          try {
+            setSuccess('🤖 Verifying report with AI...');
+            const verifyResponse = await axios.post(
+              `${API_BASE_URL}/api/premium-reports/${reportId}/verify`
+            );
 
-        // Notify parent component
-        if (onReportSubmitted) {
-          onReportSubmitted(response.data);
-        }
+            if (verifyResponse.data.success && verifyResponse.data.verification.status === 'verified') {
+              setSuccess('✅ Report verified! Publishing to DKG...');
 
-        // Auto-hide success message after 5 seconds
-        setTimeout(() => setSuccess(null), 5000);
+              // Step 3: Auto-publish if verified
+              const publishResponse = await axios.post(
+                `${API_BASE_URL}/api/premium-reports/${reportId}/publish`
+              );
+
+              if (publishResponse.data.success) {
+                setSuccess(`✅ Premium report published to DKG! UAL: ${publishResponse.data.dkg.ual}`);
+
+                // Reset form
+                setReportName('');
+                setJsonldData('');
+                setPremiumPrice('10');
+                setPayeeWallet(userWallet || '');
+                setShowForm(false);
+
+                // Notify parent component
+                if (onReportSubmitted) {
+                  onReportSubmitted({
+                    ...response.data,
+                    verification: verifyResponse.data.verification,
+                    dkg: publishResponse.data.dkg
+                  });
+                }
+
+                // Auto-hide success message after 8 seconds
+                setTimeout(() => setSuccess(null), 8000);
+              }
+            } else {
+              // Verification failed
+              setError(`❌ Report verification failed: ${verifyResponse.data.verification?.reasoning || 'Unknown reason'}`);
+            }
+          } catch (verifyErr) {
+            console.error('Verification or publishing failed:', verifyErr);
+            setError(`Verification failed: ${verifyErr.response?.data?.error || verifyErr.message}`);
+          }
+        }, 1000);
       }
     } catch (err) {
       console.error('Error submitting premium report:', err);
@@ -265,24 +378,44 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
           </div>
 
           {isPremium && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                Premium Price (TRAC) *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                style={styles.input}
-                placeholder="10.00"
-                value={premiumPrice}
-                onChange={(e) => setPremiumPrice(e.target.value)}
-                disabled={submitting}
-              />
-              <div style={styles.metaInfo}>
-                Users will pay {premiumPrice || '0'} TRAC to access this report
+            <>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  Payee Wallet Address *
+                  <span style={styles.helpText}> (who receives payments)</span>
+                </label>
+                <input
+                  type="text"
+                  style={styles.input}
+                  placeholder="0x..."
+                  value={payeeWallet}
+                  onChange={(e) => setPayeeWallet(e.target.value)}
+                  disabled={submitting}
+                />
+                <div style={styles.metaInfo}>
+                  This wallet will receive TRAC payments when users purchase access to this report
+                </div>
               </div>
-            </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>
+                  Premium Price (TRAC) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  style={styles.input}
+                  placeholder="10.00"
+                  value={premiumPrice}
+                  onChange={(e) => setPremiumPrice(e.target.value)}
+                  disabled={submitting}
+                />
+                <div style={styles.metaInfo}>
+                  Users will pay {premiumPrice || '0'} TRAC to access this report
+                </div>
+              </div>
+            </>
           )}
 
           <div style={styles.submitSection}>
@@ -399,6 +532,12 @@ const styles = {
     fontWeight: '400',
     color: '#6c757d',
     fontSize: '0.85rem'
+  },
+  helpText: {
+    fontWeight: '400',
+    color: '#6c757d',
+    fontSize: '0.85rem',
+    fontStyle: 'italic'
   },
   input: {
     width: '100%',

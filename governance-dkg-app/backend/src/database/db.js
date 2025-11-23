@@ -121,8 +121,8 @@ export const reportQueries = {
       INSERT INTO reports (
         referendum_index, submitter_wallet, report_name, jsonld_data,
         data_size_bytes, required_payment_trac, payment_address,
-        is_premium, premium_price_trac, author_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        is_premium, premium_price_trac, payee_wallet, author_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     return stmt.run(
@@ -135,6 +135,7 @@ export const reportQueries = {
       report.payment_address,
       report.is_premium || 0,
       report.premium_price_trac || null,
+      report.payee_wallet || null,
       report.author_type || 'community'
     );
   },
@@ -185,6 +186,25 @@ export const reportQueries = {
       WHERE report_id = ?
     `);
     return stmt.run(ual, assetId, txHash, explorerUrl, reportId);
+  },
+
+  // Update DKG info (flexible object-based update)
+  updateDKGInfo: (reportId, dkgInfo) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE reports
+      SET report_ual = ?, dkg_asset_id = ?, dkg_tx_hash = ?,
+          dkg_block_explorer_url = ?, dkg_published_at = ?
+      WHERE report_id = ?
+    `);
+    return stmt.run(
+      dkgInfo.report_ual,
+      dkgInfo.dkg_asset_id,
+      dkgInfo.dkg_tx_hash || null,
+      dkgInfo.dkg_block_explorer_url || null,
+      dkgInfo.dkg_published_at || new Date().toISOString(),
+      reportId
+    );
   },
 
   // Get all reports

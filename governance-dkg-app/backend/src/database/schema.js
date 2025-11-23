@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS reports (
   -- Premium Report Fields (X402)
   is_premium BOOLEAN DEFAULT 0, -- Premium reports require payment to access
   premium_price_trac REAL, -- Price to access this premium report
+  payee_wallet TEXT, -- Wallet address that receives payments for this premium report
   author_type TEXT DEFAULT 'community', -- 'community' or 'admin'
 
   -- Payment Info (for report submission)
