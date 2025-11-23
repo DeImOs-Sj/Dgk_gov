@@ -10,8 +10,6 @@ import {
   proposalQueries,
 } from "../database/db.js";
 import {
-  generatePaymentMessage,
-  processPremiumAccess,
   getPremiumReportContent,
   checkUserAccess,
 } from "../services/x402-payment-service.js";
@@ -496,11 +494,11 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
 
         // Create UAL mapping if proposal has UAL
         if (proposal.ual) {
-          ualMappingQueries.insert({
-            proposal_ual: proposal.ual,
-            report_id: reportId,
-            report_ual: dkgResult.ual,
-          });
+          ualMappingQueries.createMapping(
+            proposal.ual,
+            reportId,
+            dkgResult.ual
+          );
         }
 
         console.log(`✅ Report ${reportId} published to DKG: ${dkgResult.ual}`);
@@ -667,11 +665,11 @@ router.post("/:id/publish", async (req, res) => {
 
     // Create UAL mapping
     try {
-      ualMappingQueries.insert({
-        proposal_ual: proposal.ual,
-        report_id: reportId,
-        report_ual: result.ual,
-      });
+      ualMappingQueries.createMapping(
+        proposal.ual,
+        reportId,
+        result.ual
+      );
     } catch (mappingError) {
       console.error("Failed to create UAL mapping:", mappingError);
     }
@@ -701,55 +699,21 @@ router.post("/:id/publish", async (req, res) => {
 /**
  * POST /api/premium-reports/:id/request-access
  * Request access to a premium report (X402 payment flow)
+ *
+ * This endpoint is protected by x402 middleware which automatically:
+ * 1. Returns 402 Payment Required if payment hasn't been made
+ * 2. Verifies payment on-chain through the facilitator
+ * 3. Only allows this handler to execute if payment is valid
  */
 router.post("/:id/request-access", async (req, res) => {
   try {
     const reportId = parseInt(req.params.id);
-    const { wallet, signature, message, tx_hash } = req.body;
-
-    if (!wallet || !signature || !message) {
-      return res.status(400).json({
-        error: "Missing required fields",
-        required: ["wallet", "signature", "message"],
-      });
-    }
-
-    // Process the payment and grant access
-    const result = await processPremiumAccess(
-      reportId,
-      wallet,
-      signature,
-      message,
-      tx_hash
-    );
-
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-
-    res.json(result);
-  } catch (error) {
-    console.error("Error requesting premium access:", error);
-    res.status(500).json({
-      error: "Failed to process access request",
-      details: error.message,
-    });
-  }
-});
-
-/**
- * GET /api/premium-reports/:id/payment-message
- * Get payment message for signing
- */
-router.get("/:id/payment-message", (req, res) => {
-  try {
-    const reportId = parseInt(req.params.id);
-    const { wallet } = req.query;
+    const { wallet } = req.body;
 
     if (!wallet) {
       return res.status(400).json({
-        error: "Wallet address required",
-        message: "Provide wallet address as query parameter",
+        error: "Missing required field: wallet",
+        required: ["wallet"],
       });
     }
 
@@ -767,24 +731,61 @@ router.get("/:id/payment-message", (req, res) => {
       });
     }
 
-    const message = generatePaymentMessage(
-      reportId,
-      wallet,
-      report.premium_price_trac
-    );
+    if (!report.report_ual) {
+      return res.status(400).json({
+        error: "Report has not been published to DKG yet",
+      });
+    }
+
+    // Check if user already has access
+    const existingAccess = premiumAccessQueries.getAccessRecord(reportId, wallet);
+    if (existingAccess && existingAccess.access_granted) {
+      return res.json({
+        success: true,
+        message: "You already have access to this report",
+        accessId: existingAccess.access_id,
+        reportId,
+        reportUAL: report.report_ual,
+        alreadyHadAccess: true,
+      });
+    }
+
+    // Payment has been verified by x402 middleware at this point
+    // Extract payment proof from x402 headers if available
+    const paymentProof = req.headers['x-payment'] || 'x402-verified';
+
+    // Create or update access record
+    let accessId;
+    if (existingAccess) {
+      accessId = existingAccess.access_id;
+    } else {
+      const result = premiumAccessQueries.requestAccess({
+        report_id: reportId,
+        user_wallet: wallet,
+        payment_signature: paymentProof,
+        payment_message: 'x402 payment protocol',
+        paid_amount_trac: report.premium_price_trac,
+        payment_tx_hash: null, // x402 handles this
+      });
+      accessId = result.lastInsertRowid;
+    }
+
+    // Grant access
+    premiumAccessQueries.grantAccess(accessId);
+
+    console.log(`✅ X402 Payment verified - Access granted to report ${reportId} for ${wallet}`);
 
     res.json({
       success: true,
-      message,
+      accessId,
       reportId,
-      wallet,
-      amount: report.premium_price_trac,
-      currency: "TRAC",
+      reportUAL: report.report_ual,
+      message: "Access granted successfully via x402 payment",
     });
   } catch (error) {
-    console.error("Error generating payment message:", error);
+    console.error("Error granting premium access:", error);
     res.status(500).json({
-      error: "Failed to generate payment message",
+      error: "Failed to process access request",
       details: error.message,
     });
   }

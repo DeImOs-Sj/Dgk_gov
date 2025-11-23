@@ -57,6 +57,42 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
     }
   };
 
+  async function switchToBaseSepolia(provider) {
+    const targetChainId = '0x14a34'; // 84532 in hex = Base Sepolia
+  
+    try {
+      // Try switching first
+      await provider.send('wallet_switchEthereumChain', [
+        { chainId: targetChainId },
+      ]);
+    } catch (switchError) {
+      // If network not added (error code 4902), add it
+      if (switchError.code === 4902 || switchError.code === -32603) {
+        try {
+          await provider.send('wallet_addEthereumChain', [
+            {
+              chainId: targetChainId,
+              chainName: 'Base Sepolia',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18,
+              },
+              rpcUrls: ['https://sepolia.base.org'],
+              blockExplorerUrls: ['https://sepolia.basescan.org'],
+            },
+          ]);
+        } catch (addError) {
+          throw new Error('Failed to add Base Sepolia network. Please add it manually in MetaMask.');
+        }
+      } else if (switchError.code === 4001) {
+        throw new Error('You rejected the network switch. Please switch to Base Sepolia to use premium features.');
+      } else {
+        throw switchError;
+      }
+    }
+  }
+
   // Connect wallet
   const connectWallet = async () => {
     if (!isMetaMaskInstalled()) {
@@ -72,6 +108,8 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
       // Request account access
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
+
+      await switchToBaseSepolia(provider);
 
       const signer = await provider.getSigner();
       const address = await signer.getAddress();

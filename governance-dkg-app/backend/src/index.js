@@ -8,6 +8,7 @@ import { initializeDatabase } from './database/db.js';
 import proposalsRouter from './routes/proposals.js';
 import reportsRouter from './routes/reports.js';
 import premiumReportsRouter from './routes/premium-reports.js';
+import { createDynamicX402Middleware, FACILITATOR_URL } from './middleware/x402-config.js';
 
 dotenv.config();
 
@@ -34,6 +35,14 @@ try {
   process.exit(1);
 }
 
+// X402 Payment Middleware - Apply before routes
+// This dynamically handles payments for premium report access
+app.use(createDynamicX402Middleware());
+
+console.log('🔐 X402 Payment middleware configured');
+console.log(`   Facilitator: ${FACILITATOR_URL}`);
+console.log(`   Network: base-sepolia`);
+
 // Routes
 app.get('/', (req, res) => {
   res.json({
@@ -48,6 +57,8 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+
 
 app.get('/health', (req, res) => {
   res.json({

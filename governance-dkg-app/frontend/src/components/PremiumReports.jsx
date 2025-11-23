@@ -1,11 +1,12 @@
 /**
  * Premium Reports Component with X402 Payment Flow
- * Displays premium reports for a proposal with payment integration
+ * Displays premium reports for a proposal with automatic crypto payment integration
  */
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
+import { requestPremiumAccessWithX402, getPaymentInfo } from '../utils/x402-payment';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -15,6 +16,7 @@ const PremiumReports = ({ proposalIndex, userWallet, authSignature, authMessage,
   const [error, setError] = useState(null);
   const [payingFor, setPayingFor] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
+  console.log(userWallet)
 
   useEffect(() => {
     fetchPremiumReports();
@@ -56,10 +58,15 @@ console.log('Auth Message:', authMessage,authSignature);
     }
   };
 
-  // Handle payment for premium report
+  // Handle payment for premium report using X402 automatic payment flow
   const handlePaymentRequest = async (report) => {
     if (!userWallet) {
       alert('Please connect your wallet first');
+      return;
+    }
+
+    if (!window.ethereum) {
+      alert('MetaMask not installed. Please install MetaMask to make payments.');
       return;
     }
 
@@ -67,43 +74,38 @@ console.log('Auth Message:', authMessage,authSignature);
     setError(null);
 
     try {
-      // Get payment message from backend
-      const messageResponse = await axios.get(
-        `${API_BASE_URL}/api/premium-reports/${report.report_id}/payment-message?wallet=${userWallet}`
-      );
+      console.log(`🔐 Initiating X402 payment for report ${report.report_id}...`);
+      console.log(`💰 Price: ${report.premium_price_trac} TRAC (≈ $${(report.premium_price_trac * 0.01).toFixed(3)} USD on Base Sepolia)`);
 
-      const paymentMessage = messageResponse.data.message;
+      // Use x402 automatic payment flow
+      console.log('Requesting payment via X402...', report.report_id, userWallet);
+      const result = await requestPremiumAccessWithX402(report.report_id, userWallet);
 
-      // Sign the payment message with MetaMask
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const paymentSignature = await signer.signMessage(paymentMessage);
+      if (result.success) {
+        alert(`✅ Payment successful! You now have access to "${report.report_name}". The report will be available momentarily.`);
+        console.log('✅ X402 payment completed successfully');
 
-      // Submit payment request to backend
-      const accessResponse = await axios.post(
-        `${API_BASE_URL}/api/premium-reports/${report.report_id}/request-access`,
-        {
-          wallet: userWallet,
-          signature: paymentSignature,
-          message: paymentMessage,
-          tx_hash: null // Optional: can add actual on-chain tx hash
-        }
-      );
-
-      if (accessResponse.data.success) {
-        alert('Payment verified! You now have access to this premium report.');
         // Refresh reports to show updated access
-        fetchPremiumReports();
+        setTimeout(() => {
+          fetchPremiumReports();
+        }, 1000);
       } else {
-        setError(accessResponse.data.error || 'Payment verification failed');
+        console.error('❌ X402 payment failed:', result.error);
+        setError(result.error || 'Payment failed. Please try again.');
+
+        // Show more user-friendly error messages
+        if (result.error.includes('MetaMask')) {
+          alert('Please make sure MetaMask is unlocked and connected to Base Sepolia testnet.');
+        } else if (result.error.includes('402')) {
+          alert(`Payment of ${report.premium_price_trac} TRAC required. Please ensure you have sufficient funds on Base Sepolia.`);
+        } else {
+          alert(`Payment failed: ${result.error}`);
+        }
       }
     } catch (error) {
-      console.error('Error processing payment:', error);
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Failed to process payment. Please try again.');
-      }
+      console.error('Error processing X402 payment:', error);
+      setError(error.message || 'Failed to process payment. Please try again.');
+      alert(`Payment error: ${error.message || 'Unknown error occurred'}`);
     } finally {
       setPayingFor(null);
     }
@@ -156,6 +158,21 @@ console.log('Auth Message:', authMessage,authSignature);
   return (
     <div style={styles.container}>
       <h3 style={styles.title}>Premium Reports</h3>
+
+      {/* X402 Payment Info Banner */}
+      <div style={styles.infoBanner}>
+        <div style={styles.infoBannerHeader}>
+          <span style={styles.infoBannerIcon}>🔐</span>
+          <strong>Powered by X402 Payment Protocol</strong>
+        </div>
+        <p style={styles.infoBannerText}>
+          Premium reports use automatic crypto payments on Base Sepolia testnet.
+          Click "Pay" to purchase access - payment and verification happen automatically via MetaMask.
+        </p>
+        <div style={styles.infoBannerNote}>
+          <strong>Network:</strong> Base Sepolia Testnet | <strong>Currency:</strong> USDC (via x402)
+        </div>
+      </div>
 
       <div style={styles.reportsList}>
         {premiumReports.map((report) => (
@@ -293,6 +310,38 @@ const styles = {
     fontWeight: '700',
     marginBottom: '1rem',
     color: '#212529'
+  },
+  infoBanner: {
+    backgroundColor: '#e7f3ff',
+    border: '2px solid #2196f3',
+    borderRadius: '8px',
+    padding: '1.25rem',
+    marginBottom: '1.5rem'
+  },
+  infoBannerHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginBottom: '0.75rem',
+    fontSize: '1rem',
+    color: '#0d47a1'
+  },
+  infoBannerIcon: {
+    fontSize: '1.5rem'
+  },
+  infoBannerText: {
+    margin: '0.5rem 0',
+    fontSize: '0.9rem',
+    color: '#1565c0',
+    lineHeight: '1.6'
+  },
+  infoBannerNote: {
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid #90caf9',
+    fontSize: '0.85rem',
+    color: '#1976d2',
+    fontFamily: 'monospace'
   },
   loading: {
     textAlign: 'center',

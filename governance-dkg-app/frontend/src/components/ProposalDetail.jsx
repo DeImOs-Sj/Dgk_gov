@@ -77,6 +77,9 @@ function ProposalDetail() {
     }
   };
 
+  console.log("User Wallet in Proposal Detail:",proposal?.dkg_asset_id);
+
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setSuccess('Copied to clipboard!');
@@ -557,6 +560,7 @@ function ProposalDetail() {
         <div className="card">
           <SubmitPremiumReport
             proposalIndex={proposal.referendum_index}
+            proposalUAL={proposal?.dkg_asset_id}
             userWallet={userWallet}
             authSignature={authSignature}
             authMessage={authMessage}

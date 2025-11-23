@@ -8,7 +8,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMessage, onReportSubmitted }) => {
+const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignature, authMessage, onReportSubmitted }) => {
   const [reportName, setReportName] = useState('');
   const [jsonldData, setJsonldData] = useState('');
   const [isPremium, setIsPremium] = useState(true);
@@ -18,6 +18,8 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+
 
   // Auto-fill payee wallet with connected wallet
   React.useEffect(() => {
@@ -41,7 +43,6 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
       'x-wallet-message': encodedMessage
     };
   };
-
   // Load example premium report
   const loadExampleReport = () => {
     const exampleReport = {
@@ -54,7 +55,7 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
       "@id": `polkadot:referendum:${proposalIndex}:premium-report:${Date.now()}`,
       "schema:name": reportName || "Expert Analysis: Proposal Impact & Feasibility Assessment",
       "schema:description": "Comprehensive premium analysis providing expert insights on technical feasibility, financial implications, and strategic recommendations for the governance proposal.",
-      "schema:about": `polkadot:referendum:${proposalIndex}`,
+      "schema:about": `did:dkg:otp:20430/0xcdb28e93ed340ec10a71bba00a31dbfcf1bd5d37/399691`,
       "schema:dateCreated": new Date().toISOString(),
       "schema:author": {
         "@type": "schema:Person",
@@ -201,7 +202,6 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
     try {
       setSubmitting(true);
 
-      // Step 1: Submit the report
       const response = await axios.post(
         `${API_BASE_URL}/api/premium-reports/submit`,
         {
@@ -217,52 +217,66 @@ const SubmitPremiumReport = ({ proposalIndex, userWallet, authSignature, authMes
 
       if (response.data.success) {
         const reportId = response.data.report.report_id;
-        setSuccess(`✅ Premium report submitted successfully! Processing...`);
+        setSuccess(`✅ Premium report submitted! Starting verification...`);
 
-        // Step 2: Auto-trigger verification
+        // Auto-trigger verification and publish flow
         setTimeout(async () => {
           try {
-            setSuccess('🤖 Verifying report with AI...');
+            // Step 1: Verify the report
+            setSuccess(`🔍 Verifying report with AI...`);
             const verifyResponse = await axios.post(
               `${API_BASE_URL}/api/premium-reports/${reportId}/verify`
             );
 
-            if (verifyResponse.data.success && verifyResponse.data.verification.status === 'verified') {
-              setSuccess('✅ Report verified! Publishing to DKG...');
+            if (verifyResponse.data.success) {
+              const verification = verifyResponse.data.verification;
 
-              // Step 3: Auto-publish if verified
-              const publishResponse = await axios.post(
-                `${API_BASE_URL}/api/premium-reports/${reportId}/publish`
-              );
+              if (verification.status === 'verified') {
+                setSuccess(`✅ Report verified! Publishing to DKG...`);
 
-              if (publishResponse.data.success) {
-                setSuccess(`✅ Premium report published to DKG! UAL: ${publishResponse.data.dkg.ual}`);
+                // Step 2: Publish to DKG
+                const publishResponse = await axios.post(
+                  `${API_BASE_URL}/api/premium-reports/${reportId}/verify-and-publish`,
+                  {},
+                  { headers: getAuthHeaders() }
+                );
 
-                // Reset form
-                setReportName('');
-                setJsonldData('');
-                setPremiumPrice('10');
-                setPayeeWallet(userWallet || '');
-                setShowForm(false);
+                if (publishResponse.data.success) {
+                  setSuccess(
+                    `🎉 Premium report published to DKG successfully!\n` +
+                    `UAL: ${publishResponse.data.dkg.ual}\n` +
+                    `Report ID: ${reportId}`
+                  );
 
-                // Notify parent component
-                if (onReportSubmitted) {
-                  onReportSubmitted({
-                    ...response.data,
-                    verification: verifyResponse.data.verification,
-                    dkg: publishResponse.data.dkg
-                  });
+                  // Reset form
+                  setReportName('');
+                  setJsonldData('');
+                  setPremiumPrice('10');
+                  setPayeeWallet(userWallet || '');
+                  setShowForm(false);
+
+                  // Notify parent component
+                  if (onReportSubmitted) {
+                    onReportSubmitted({
+                      ...response.data,
+                      dkg: publishResponse.data.dkg
+                    });
+                  }
+
+                  // Auto-hide success message after 10 seconds
+                  setTimeout(() => setSuccess(null), 10000);
+                } else {
+                  setError(`Failed to publish to DKG: ${publishResponse.data.error || 'Unknown error'}`);
                 }
-
-                // Auto-hide success message after 8 seconds
-                setTimeout(() => setSuccess(null), 8000);
+              } else {
+                setError(
+                  `❌ Report verification failed: ${verification.reasoning}\n` +
+                  `Issues: ${verification.issues?.join(', ') || 'None specified'}`
+                );
               }
-            } else {
-              // Verification failed
-              setError(`❌ Report verification failed: ${verifyResponse.data.verification?.reasoning || 'Unknown reason'}`);
             }
           } catch (verifyErr) {
-            console.error('Verification or publishing failed:', verifyErr);
+            console.error('Verification/publish error:', verifyErr);
             setError(`Verification failed: ${verifyErr.response?.data?.error || verifyErr.message}`);
           }
         }, 1000);
