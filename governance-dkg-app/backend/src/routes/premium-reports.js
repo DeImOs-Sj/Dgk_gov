@@ -102,45 +102,95 @@ router.get("/proposal/:index", optionalAuthenticateWallet, (req, res) => {
 
 /**
  * GET /api/premium-reports/:id
- * Get a specific premium report (requires payment if premium)
+ * Get a specific premium report with X402 payment integration
+ * This endpoint automatically handles payment via x402 middleware for premium reports
  */
-router.get("/:id", optionalAuthenticateWallet, (req, res) => {
+router.get("/:id", (req, res) => {
   try {
     const reportId = parseInt(req.params.id);
-    const userWallet = req.userWallet;
+    const report = reportQueries.getById(reportId);
+
+    if (!report) {
+      return res.status(404).json({
+        error: "Report not found",
+      });
+    }
+
+    // For non-premium reports, return immediately
+    if (!report.is_premium) {
+      return res.json({
+        success: true,
+        report,
+      });
+    }
+
+    // For premium reports with x402 payment
+    // Extract wallet from query param or body (x402 flow)
+    const userWallet = req.query.wallet || req.body?.wallet;
 
     if (!userWallet) {
-      // No authentication provided, check if it's premium
-      const report = reportQueries.getById(reportId);
-      if (report && report.is_premium) {
-        return res.status(402).json({
-          success: false,
-          error: "Payment required",
-          message:
-            "This is a premium report. Please authenticate and pay to access.",
-          paymentRequired: true,
-          reportId: report.report_id,
-          reportName: report.report_name,
-          price: report.premium_price_trac,
-          currency: "TRAC",
+      return res.status(400).json({
+        error: "Wallet address required for premium reports",
+        hint: "Add ?wallet=YOUR_ADDRESS to the URL",
+      });
+    }
+
+    // Check if user already has access
+    const hasAccess = checkUserAccess(reportId, userWallet);
+
+    if (hasAccess) {
+      // User already paid, return full content
+      console.log(`✅ User ${userWallet} has access to report ${reportId}`);
+      return res.json({
+        success: true,
+        report,
+        accessGranted: true,
+      });
+    }
+
+    // If we reach here after x402 middleware, payment was verified
+    // The x402 middleware only lets the request through if payment is valid
+    if (req.headers['x-payment']) {
+      console.log(`✅ X402 payment verified for report ${reportId} by ${userWallet}`);
+
+      // Grant access
+      const existingAccess = premiumAccessQueries.getAccessRecord(reportId, userWallet);
+      let accessId;
+
+      if (existingAccess) {
+        accessId = existingAccess.access_id;
+      } else {
+        const result = premiumAccessQueries.requestAccess({
+          report_id: reportId,
+          user_wallet: userWallet,
+          payment_signature: req.headers['x-payment'],
+          payment_message: 'x402 payment protocol',
+          paid_amount_trac: report.premium_price_trac,
+          payment_tx_hash: null,
         });
+        accessId = result.lastInsertRowid;
       }
+
+      premiumAccessQueries.grantAccess(accessId);
+      console.log(`✅ Access granted to report ${reportId} for ${userWallet}`);
+
+      return res.json({
+        success: true,
+        report,
+        accessGranted: true,
+        accessId,
+      });
     }
 
-    const result = getPremiumReportContent(reportId, userWallet);
-
-    if (result.statusCode === 402) {
-      return res.status(402).json(result);
-    }
-
-    if (!result.success) {
-      return res.status(result.statusCode || 500).json(result);
-    }
-
-    res.json({
-      success: true,
-      report: result.report,
+    // No payment header means x402 middleware will handle 402 response
+    // This shouldn't happen if middleware is configured correctly
+    return res.status(402).json({
+      error: "Payment required",
+      reportId: report.report_id,
+      reportName: report.report_name,
+      price: report.premium_price_trac,
     });
+
   } catch (error) {
     console.error("Error fetching premium report:", error);
     res.status(500).json({
@@ -754,26 +804,28 @@ router.post("/:id/request-access", async (req, res) => {
     // Extract payment proof from x402 headers if available
     const paymentProof = req.headers['x-payment'] || 'x402-verified';
 
+    console.log(`✅ X402 Payment verified for report ${reportId} by ${wallet}`);
+
     // Create or update access record
-    let accessId;
-    if (existingAccess) {
-      accessId = existingAccess.access_id;
-    } else {
-      const result = premiumAccessQueries.requestAccess({
-        report_id: reportId,
-        user_wallet: wallet,
-        payment_signature: paymentProof,
-        payment_message: 'x402 payment protocol',
-        paid_amount_trac: report.premium_price_trac,
-        payment_tx_hash: null, // x402 handles this
-      });
-      accessId = result.lastInsertRowid;
-    }
+    // let accessId;
+    // if (existingAccess) {
+    //   accessId = existingAccess.access_id;
+    // } else {
+    //   const result = premiumAccessQueries.requestAccess({
+    //     report_id: reportId,
+    //     user_wallet: wallet,
+    //     payment_signature: paymentProof,
+    //     payment_message: 'x402 payment protocol',
+    //     paid_amount_trac: report.premium_price_trac,
+    //     payment_tx_hash: null, // x402 handles this
+    //   });
+    //   accessId = result.lastInsertRowid;
+    // }
 
-    // Grant access
-    premiumAccessQueries.grantAccess(accessId);
+    // // Grant access
+    // premiumAccessQueries.grantAccess(accessId);
 
-    console.log(`✅ X402 Payment verified - Access granted to report ${reportId} for ${wallet}`);
+    // console.log(`✅ X402 Payment verified - Access granted to report ${reportId} for ${wallet}`);
 
     res.json({
       success: true,

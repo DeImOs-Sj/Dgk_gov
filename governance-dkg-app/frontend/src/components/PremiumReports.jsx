@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ethers } from 'ethers';
-import { requestPremiumAccessWithX402, getPaymentInfo } from '../utils/x402-payment';
+import { getPremiumReportWithX402, getPaymentInfo } from '../utils/x402-payment';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -75,20 +75,26 @@ console.log('Auth Message:', authMessage,authSignature);
 
     try {
       console.log(`🔐 Initiating X402 payment for report ${report.report_id}...`);
-      console.log(`💰 Price: ${report.premium_price_trac} TRAC (≈ $${(report.premium_price_trac * 0.01).toFixed(3)} USD on Base Sepolia)`);
+      console.log(`💰 Price: $${report.premium_price_trac} USDC on Base Sepolia`);
 
-      // Use x402 automatic payment flow
-      console.log('Requesting payment via X402...', report.report_id, userWallet);
-      const result = await requestPremiumAccessWithX402(report.report_id, userWallet);
+      // NEW: Use simplified GET flow - single request handles payment + data retrieval
+      console.log('Requesting payment via X402 GET flow...', report.report_id, userWallet);
+      const result = await getPremiumReportWithX402(report.report_id, userWallet);
 
       if (result.success) {
-        alert(`✅ Payment successful! You now have access to "${report.report_name}". The report will be available momentarily.`);
         console.log('✅ X402 payment completed successfully');
 
-        // Refresh reports to show updated access
+        // Show the report immediately (GET returns full data)
+        if (result.data.report) {
+          setExpandedReport(result.data.report);
+        }
+
+        alert(`✅ Payment successful! You now have access to "${report.report_name}".`);
+
+        // Refresh reports list to show updated access
         setTimeout(() => {
           fetchPremiumReports();
-        }, 1000);
+        }, 500);
       } else {
         console.error('❌ X402 payment failed:', result.error);
         setError(result.error || 'Payment failed. Please try again.');
@@ -96,8 +102,12 @@ console.log('Auth Message:', authMessage,authSignature);
         // Show more user-friendly error messages
         if (result.error.includes('MetaMask')) {
           alert('Please make sure MetaMask is unlocked and connected to Base Sepolia testnet.');
-        } else if (result.error.includes('402')) {
-          alert(`Payment of ${report.premium_price_trac} TRAC required. Please ensure you have sufficient funds on Base Sepolia.`);
+        } else if (result.error.includes('insufficient')) {
+          alert(`Insufficient USDC balance. You need $${report.premium_price_trac} USDC on Base Sepolia.`);
+        } else if (result.error.includes('rejected') || result.error.includes('denied')) {
+          alert('Payment signature was rejected. Please try again.');
+        } else if (result.error.includes('network')) {
+          alert('Please switch to Base Sepolia network in MetaMask (Chain ID: 84532)');
         } else {
           alert(`Payment failed: ${result.error}`);
         }
@@ -111,26 +121,30 @@ console.log('Auth Message:', authMessage,authSignature);
     }
   };
 
-  // View full premium report (if user has access)
+  // View full premium report with X402 payment (if needed)
   const viewFullReport = async (reportId) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/premium-reports/${reportId}`,
-        { headers: getAuthHeaders() }
-      );
+    if (!userWallet) {
+      alert('Please connect your wallet first');
+      return;
+    }
 
-      if (response.data.success) {
-        setExpandedReport(response.data.report);
-      } else if (response.status === 402) {
-        alert('Payment required to view this report');
+    try {
+      console.log(`📖 Viewing report ${reportId}...`);
+
+      // Use X402 payment wrapper - will handle payment if needed
+      const result = await getPremiumReportWithX402(reportId, userWallet);
+
+      if (result.success) {
+        setExpandedReport(result.data.report);
+        console.log('✅ Report loaded successfully');
+      } else {
+        console.error('Failed to load report:', result.error);
+        alert(result.error || 'Failed to load report');
       }
     } catch (error) {
-      if (error.response?.status === 402) {
-        alert('Payment required to view this report. Please complete payment first.');
-      } else {
-        console.error('Error fetching report:', error);
-        setError('Failed to load report content');
-      }
+      console.error('Error fetching report:', error);
+      setError('Failed to load report content');
+      alert(`Error: ${error.message || 'Failed to load report'}`);
     }
   };
 
@@ -204,7 +218,7 @@ console.log('Auth Message:', authMessage,authSignature);
 
               <div style={styles.priceContainer}>
                 <div style={styles.price}>
-                  {report.premium_price_trac} TRAC
+                  ${report.premium_price_trac} USDC
                 </div>
               </div>
             </div>
@@ -239,7 +253,7 @@ console.log('Auth Message:', authMessage,authSignature);
                       ? 'Processing...'
                       : !userWallet
                       ? 'Connect Wallet to Pay'
-                      : `Pay ${report.premium_price_trac} TRAC`}
+                      : `Pay $${report.premium_price_trac} USDC`}
                   </button>
                 </div>
               )}

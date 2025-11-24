@@ -177,7 +177,7 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
     }
 
     if (isPremium && (!premiumPrice || parseFloat(premiumPrice) <= 0)) {
-      setError('Please set a valid premium price in TRAC tokens');
+      setError('Please set a valid premium price in USDC tokens');
       return;
     }
 
@@ -333,7 +333,7 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
           <div style={styles.infoBox}>
             <h4 style={styles.infoTitle}>What are Premium Reports?</h4>
             <p style={styles.infoText}>
-              Premium reports are in-depth analyses that other users can purchase with TRAC tokens.
+              Premium reports are in-depth analyses that other users can purchase with USDC tokens.
               You set the price, and users pay to access your expert insights.
             </p>
           </div>
@@ -407,26 +407,26 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
                   disabled={submitting}
                 />
                 <div style={styles.metaInfo}>
-                  This wallet will receive TRAC payments when users purchase access to this report
+                  This wallet will receive USDC payments when users purchase access to this report
                 </div>
               </div>
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>
-                  Premium Price (TRAC) *
+                  Premium Price (USDC) *
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0.01"
                   style={styles.input}
-                  placeholder="10.00"
+                  placeholder="1.00"
                   value={premiumPrice}
                   onChange={(e) => setPremiumPrice(e.target.value)}
                   disabled={submitting}
                 />
                 <div style={styles.metaInfo}>
-                  Users will pay {premiumPrice || '0'} TRAC to access this report
+                  Users will pay {premiumPrice || '0'} USDC to access this report
                 </div>
               </div>
             </>
