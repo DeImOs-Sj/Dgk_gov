@@ -108,14 +108,12 @@ console.log('Auth Message:', authMessage,authSignature);
           alert('Payment signature was rejected. Please try again.');
         } else if (result.error.includes('network')) {
           alert('Please switch to Base Sepolia network in MetaMask (Chain ID: 84532)');
-        } else {
-          alert(`Payment failed: ${result.error}`);
-        }
+        } 
       }
     } catch (error) {
       console.error('Error processing X402 payment:', error);
       setError(error.message || 'Failed to process payment. Please try again.');
-      alert(`Payment error: ${error.message || 'Unknown error occurred'}`);
+      // alert(`Payment error: ${error.message || 'Unknown error occurred'}`);
     } finally {
       setPayingFor(null);
     }
@@ -139,12 +137,12 @@ console.log('Auth Message:', authMessage,authSignature);
         console.log('✅ Report loaded successfully');
       } else {
         console.error('Failed to load report:', result.error);
-        alert(result.error || 'Failed to load report');
+        // alert(result.error || 'Failed to load report');
       }
     } catch (error) {
       console.error('Error fetching report:', error);
       setError('Failed to load report content');
-      alert(`Error: ${error.message || 'Failed to load report'}`);
+      // alert(`Error: ${error.message || 'Failed to load report'}`);
     }
   };
 

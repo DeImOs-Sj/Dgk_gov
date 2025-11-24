@@ -70,7 +70,7 @@ export async function getPremiumReportWithX402(reportId, userWallet) {
 
     // Create viem wallet client from MetaMask
     const walletClient = await createViemWalletClient();
-    console.log('✅ Viem wallet client created');
+    console.log('✅ Viem wallet client created',walletClient);
 
     // Wrap fetch with x402 payment capabilities
     const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient);
@@ -86,7 +86,7 @@ export async function getPremiumReportWithX402(reportId, userWallet) {
         }
       }
     );
-
+console.log('✅ GET request completed with status', response);
     const data = await response.json();
 
     if (!response.ok) {

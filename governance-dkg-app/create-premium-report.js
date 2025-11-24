@@ -18,7 +18,7 @@ const db = new Database(dbPath);
 // Configuration
 const CONFIG = {
   referendum_index: 1765,
-  dkg_ual: 'did:dkg:otp:20430/0xcdb28sse93ed34d0fdec10vxswb00a31dbdssfcffbd5d37/401123',
+  dkg_ual: 'did:dkg:otp:20430/0xcdb28ssffe93ed34d0fdesadcff10sssdvxswb00a31dbdssfcffbd5d37/401123',
   report_name: 'Premium Report for Proposal 1765',
   submitter_wallet: '0xe717d34064e45af53c8afc2d4a64144803e2428f', // Update if needed
   payee_wallet: '0xe717d34064e45af53c8afc2d4a64144803e2428f', // Wallet that will receive payments
