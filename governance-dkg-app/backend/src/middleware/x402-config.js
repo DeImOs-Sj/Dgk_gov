@@ -8,7 +8,7 @@ import { paymentMiddleware } from 'x402-express';
 
 // Base Sepolia testnet configuration
 // Using PayAI facilitator (same as x402-prompt-store working implementation)
-const FACILITATOR_URL = "https://facilitator.payai.network";
+const FACILITATOR_URL = "https://x402.org/facilitator";
 const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 const BASE_SEPOLIA_CHAIN_ID = 84532;
 
@@ -98,8 +98,8 @@ export function createReportX402MiddlewareForGet(reportId) {
 
   // Simplified configuration - following x402-prompt-store working pattern
   const routeConfig = {
-    [`GET /api/premium-reports/${reportId}`]: {
-      price: '$0.005',
+    [`/api/premium-reports/${reportId}`]: {
+      price: '$0.1',
       network: "base-sepolia",
       config: {
         description: `Access to premium report: ${report.report_name || `Report #${reportId}`}`

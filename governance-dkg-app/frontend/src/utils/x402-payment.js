@@ -75,6 +75,7 @@ export async function getPremiumReportWithX402(reportId, userWallet) {
     // Wrap fetch with x402 payment capabilities
     const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient);
 
+
     // Make GET request with wallet parameter
     // X402 will automatically handle 402 → payment → retry
     const response = await fetchWithPayment(
