@@ -1,9 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import {
+  ArrowLeft,
+  Database,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Copy,
+  ExternalLink,
+  Shield,
+  Sparkles,
+  FileText,
+  DollarSign,
+  User,
+  Calendar,
+  TrendingUp
+} from 'lucide-react';
 import WalletConnect from './WalletConnect';
 import PremiumReports from './PremiumReports';
 import SubmitPremiumReport from './SubmitPremiumReport';
+
+// Navigation Component
+function Navigation() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? 'bg-white/90 backdrop-blur-md shadow-xl border-b border-purple-100'
+        : 'bg-transparent pt-2'
+        }`}
+    >
+      <div className="max-w-8xl mx-auto px-6 lg:px-12">
+        <div className="flex items-center justify-between h-20">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <span className="text-xl font-black text-black">D</span>
+            </div>
+            <div className="hidden sm:block">
+              <span className="text-xl font-extrabold text-gray-900">
+                DKG Governance
+              </span>
+              <p className="text-xs text-gray-500 -mt-0.5">Polkadot OpenGov</p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-4">
+            <Link
+              to="/proposals"
+              className="px-6 py-2.5 text-sm font-bold text-gray-700 hover:text-purple-600 transition-colors"
+            >
+              All Proposals
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
 
 function ProposalDetail() {
   const { index } = useParams();
@@ -14,13 +77,7 @@ function ProposalDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
-  // Report submission state
-  const [submitterWallet, setSubmitterWallet] = useState('');
-  const [reportJSONLD, setReportJSONLD] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  // Publishing progress state
   const [publishProgress, setPublishProgress] = useState([]);
   const [showProgress, setShowProgress] = useState(false);
   const [chatAPIAvailable, setChatAPIAvailable] = useState(false);
@@ -29,8 +86,6 @@ function ProposalDetail() {
   const [userWallet, setUserWallet] = useState(null);
   const [authSignature, setAuthSignature] = useState(null);
   const [authMessage, setAuthMessage] = useState(null);
-
-  // Premium reports refresh trigger
   const [premiumReportsRefreshKey, setPremiumReportsRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -77,99 +132,26 @@ function ProposalDetail() {
     }
   };
 
-  console.log("User Wallet in Proposal Detail:",proposal?.dkg_asset_id);
-
-
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setSuccess('Copied to clipboard!');
     setTimeout(() => setSuccess(null), 2000);
   };
 
-  // Handle wallet connection
   const handleWalletConnected = (wallet, signature, message) => {
     setUserWallet(wallet);
     setAuthSignature(signature);
     setAuthMessage(message);
-    console.log('Wallet connected:', wallet);
   };
 
-  // Handle wallet disconnection
   const handleWalletDisconnected = () => {
     setUserWallet(null);
     setAuthSignature(null);
     setAuthMessage(null);
-    console.log('Wallet disconnected');
   };
 
-  // Handle premium report submission
   const handlePremiumReportSubmitted = (data) => {
-    console.log('Premium report submitted:', data);
-    // Trigger refresh of premium reports list
     setPremiumReportsRefreshKey(prev => prev + 1);
-  };
-
-  const publishToDKG = async () => {
-    if (!window.confirm('Publish this proposal to DKG?')) return;
-
-    try {
-      setSubmitting(true);
-      setError(null);
-
-      const response = await axios.post(`/api/proposals/${index}/publish`);
-
-      if (response.data.success) {
-        setSuccess('Proposal published to DKG successfully!');
-        fetchProposal(); // Refresh
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const publishViaChatAPI = async () => {
-    if (!window.confirm('Publish this proposal to DKG via Chat API?')) return;
-
-    try {
-      setSubmitting(true);
-      setError(null);
-      setSuccess(null);
-      setPublishProgress([]);
-      setShowProgress(true);
-
-      // Add initial progress
-      setPublishProgress([{ step: 0, message: 'Starting publication process...', data: {} }]);
-
-      const response = await axios.post(`/api/proposals/${index}/publish-via-chat`);
-
-      if (response.data.success) {
-        // Display all progress steps
-        if (response.data.progress && response.data.progress.length > 0) {
-          setPublishProgress(response.data.progress);
-        }
-
-        setSuccess('✅ Proposal published to DKG via Chat API successfully!');
-
-        // Show response details
-        if (response.data.dkg.fullResponse) {
-          console.log('DKG Agent Response:', response.data.dkg.fullResponse);
-        }
-
-        setTimeout(() => {
-          fetchProposal(); // Refresh
-          setShowProgress(false);
-        }, 3000);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-      if (err.response?.data?.progress) {
-        setPublishProgress(err.response.data.progress);
-      }
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const publishDirectAPI = async () => {
@@ -182,13 +164,11 @@ function ProposalDetail() {
       setPublishProgress([]);
       setShowProgress(true);
 
-      // Add initial progress
       setPublishProgress([{ step: 0, message: 'Initializing DKG publication...', data: {} }]);
 
       const response = await axios.post(`/api/proposals/${index}/publish-direct`);
 
       if (response.data.success) {
-        // Display all progress steps
         if (response.data.progress && response.data.progress.length > 0) {
           setPublishProgress(response.data.progress);
         }
@@ -200,7 +180,7 @@ function ProposalDetail() {
         }
 
         setTimeout(() => {
-          fetchProposal(); // Refresh
+          fetchProposal();
           setShowProgress(false);
         }, 3000);
       }
@@ -214,348 +194,346 @@ function ProposalDetail() {
     }
   };
 
-  const handleSubmitReport = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    // Validation
-    if (!submitterWallet) {
-      setError('Please enter your wallet address');
-      return;
+  const getStatusBadge = (status) => {
+    if (status === 'Executed' || status === 'verified') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+          <CheckCircle className="w-4 h-4" />
+          {status === 'verified' ? 'Verified' : 'Executed'}
+        </span>
+      );
+    } else if (status === 'Rejected') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+          <XCircle className="w-4 h-4" />
+          Rejected
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
+          <Clock className="w-4 h-4" />
+          {status}
+        </span>
+      );
     }
-
-    if (!reportJSONLD) {
-      setError('Please enter JSON-LD report data');
-      return;
-    }
-
-    // Validate JSON
-    let parsed;
-    try {
-      parsed = JSON.parse(reportJSONLD);
-      if (!parsed['@context'] || !parsed['@type']) {
-        setError('Invalid JSON-LD: must include @context and @type');
-        return;
-      }
-    } catch (parseErr) {
-      setError('Invalid JSON: ' + parseErr.message);
-      return;
-    }
-
-    // Check if parent proposal UAL is referenced in the report
-    if (proposal && proposal.ual) {
-      const jsonString = JSON.stringify(parsed).toLowerCase();
-      const ualLower = proposal.ual.toLowerCase();
-
-      if (!jsonString.includes(ualLower) && !jsonString.includes(`polkadot:referendum:${index}`)) {
-        setError(`⚠️ Warning: Your report does not reference the parent proposal UAL or ID. Please include either "${proposal.ual}" or "polkadot:referendum:${index}" in your JSON-LD data to properly link it to this proposal.`);
-        return;
-      }
-    }
-
-    try {
-      setSubmitting(true);
-
-      const response = await axios.post('/api/reports/submit', {
-        referendum_index: parseInt(index),
-        submitter_wallet: submitterWallet,
-        report_jsonld: reportJSONLD
-      });
-
-      if (response.data.success) {
-        setSuccess('Report submitted successfully! Processing...');
-
-        // Auto-trigger verification
-        const reportId = response.data.report.report_id;
-        setTimeout(async () => {
-          try {
-            const verifyResponse = await axios.post(`/api/reports/${reportId}/verify`);
-
-            if (verifyResponse.data.success) {
-              const verification = verifyResponse.data.verification;
-
-              if (verification.status === 'verified') {
-                setSuccess('✅ Report verified! Publishing to DKG...');
-
-                // Auto-publish if verified
-                const publishResponse = await axios.post(`/api/reports/${reportId}/publish`);
-
-                if (publishResponse.data.success) {
-                  setSuccess(`✅ Report published to DKG! UAL: ${publishResponse.data.dkg.ual}`);
-                  setReportJSONLD('');
-                  setSubmitterWallet('');
-                  fetchReports(); // Refresh reports list
-                }
-              } else {
-                setError(`❌ Report rejected: ${verification.reasoning}`);
-              }
-            }
-          } catch (verifyErr) {
-            setError('Verification failed: ' + verifyErr.message);
-          }
-        }, 1000);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const loadExampleReport = () => {
-    const exampleReport = {
-      "@context": {
-        "schema": "https://schema.org/",
-        "polkadot": "https://polkadot.network/governance/"
-      },
-      "@type": "schema:Report",
-      "@id": `polkadot:referendum:${index}:report:${Date.now()}`,
-      "schema:name": "Community Progress Report",
-      "schema:description": "This report provides an update on the implementation progress of the proposal.",
-      "schema:about": `polkadot:referendum:${index}`,
-      "polkadot:milestones": [
-        {
-          "@type": "schema:Action",
-          "schema:name": "Initial Development",
-          "schema:status": "Completed"
-        }
-      ],
-      "schema:dateCreated": new Date().toISOString()
-    };
-
-    setReportJSONLD(JSON.stringify(exampleReport, null, 2));
   };
 
   if (loading) {
-    return <div className="loading">Loading proposal...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading proposal...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error && !proposal) {
-    return <div className="error">Error: {error}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-md">
+          <p className="text-red-700 font-medium">Error: {error}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!proposal) {
-    return <div className="error">Proposal not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 max-w-md">
+          <p className="text-yellow-700 font-medium">Proposal not found</p>
+        </div>
+      </div>
+    );
   }
 
-  const getStatusBadge = (status) => {
-    const className = status === 'Executed' ? 'badge-executed' :
-                     status === 'Rejected' ? 'badge-rejected' :
-                     status === 'verified' ? 'badge-verified' :
-                     'badge-pending';
-    return <span className={`badge ${className}`}>{status}</span>;
-  };
-
   return (
-    <div>
-      <button className="btn btn-secondary" onClick={() => navigate('/')} style={{ marginBottom: '20px' }}>
-        ← Back to All Proposals
-      </button>
-
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
-
-      {/* Wallet Connection */}
+    <>
+      <Navigation />
       <WalletConnect
         onWalletConnected={handleWalletConnected}
         onWalletDisconnected={handleWalletDisconnected}
       />
 
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-          <div>
-            <div style={{ marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.9em', color: '#666' }}>Referendum #{proposal.referendum_index}</span>
-            </div>
-            <h2 style={{ marginTop: 0 }}>{proposal.title}</h2>
-          </div>
-          <div>
-            {getStatusBadge(proposal.status)}
-            {proposal.origin && <span className="badge">{proposal.origin}</span>}
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 pt-24 pb-16">
+        {/* Animated Background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 -left-40 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 -right-40 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
 
-        {proposal.summary && (
-          <div style={{ marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
-            <strong>Summary:</strong>
-            <p style={{ marginTop: '10px', lineHeight: '1.6' }}>{proposal.summary}</p>
-          </div>
-        )}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate('/proposals')}
+            className="group flex items-center gap-2 mb-8 px-4 py-2 text-gray-700 hover:text-purple-600 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-semibold">Back to All Proposals</span>
+          </button>
 
-        <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-          <div>
-            <strong>Proposer:</strong>
-            <div style={{ fontSize: '0.85em', wordBreak: 'break-all', marginTop: '5px' }}>
-              {proposal.proposer_address || 'N/A'}
+          {/* Alert Messages */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+              <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 font-medium">{error}</p>
             </div>
-          </div>
-          <div>
-            <strong>Treasury Proposal ID:</strong>
-            <div style={{ marginTop: '5px' }}>
-              {proposal.treasury_proposal_id !== -1 ? proposal.treasury_proposal_id : 'N/A'}
+          )}
+
+          {success && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <p className="text-green-700 font-medium">{success}</p>
             </div>
-          </div>
-        </div>
+          )}
 
-        {proposal.ual ? (
-          <div style={{ marginTop: '20px' }}>
-            <strong>DKG Knowledge Asset:</strong>
-            <div className="ual-display">
-              {proposal.ual}
-              <button className="copy-btn" onClick={() => copyToClipboard(proposal.ual)}>
-                Copy
-              </button>
-            </div>
-            {proposal.block_explorer_url && (
-              <a href={proposal.block_explorer_url} target="_blank" rel="noopener noreferrer" className="link">
-                View on DKG Explorer →
-              </a>
-            )}
-          </div>
-        ) : (
-          <div style={{ marginTop: '20px', padding: '15px', background: '#fff3cd', borderRadius: '5px' }}>
-            <strong>Not yet published to DKG</strong>
-            <p style={{ margin: '10px 0 0 0' }}>This proposal hasn't been published as a Knowledge Asset yet.</p>
-
-            <div style={{ marginTop: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                className="btn btn-primary"
-                onClick={publishDirectAPI}
-                disabled={submitting}
-                style={{ background: '#007bff' }}
-              >
-                {submitting ? 'Publishing...' : 'Publish via DKG Node API (Recommended)'}
-              </button>
-
-              <button
-                className="btn btn-primary"
-                onClick={publishToDKG}
-                disabled={submitting}
-                style={{ background: '#6c757d' }}
-              >
-                {submitting ? 'Publishing...' : 'Publish (Legacy)'}
-              </button>
-
-              {chatAPIAvailable && (
-                <button
-                  className="btn btn-primary"
-                  onClick={publishViaChatAPI}
-                  disabled={submitting}
-                  style={{ background: '#28a745' }}
-                >
-                  {submitting ? 'Publishing...' : 'Publish via AI Agent'}
-                </button>
-              )}
-            </div>
-
-            <div style={{ marginTop: '10px', fontSize: '0.85em', color: '#666' }}>
-              💡 <strong>Recommended:</strong> Use "DKG Node API" for direct publishing with real-time progress tracking
-              {chatAPIAvailable && ' | AI Agent available for conversational publishing'}
-            </div>
-          </div>
-        )}
-
-        {/* Progress Display */}
-        {showProgress && publishProgress.length > 0 && (
-          <div style={{ marginTop: '20px', padding: '15px', background: '#e7f3ff', borderRadius: '5px' }}>
-            <strong>📊 Publication Progress</strong>
-            <div style={{ marginTop: '10px' }}>
-              {publishProgress.map((step, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '8px 12px',
-                    margin: '5px 0',
-                    background: step.step === -1 ? '#ffebee' : '#fff',
-                    borderLeft: `3px solid ${step.step === -1 ? '#f44336' : '#2196f3'}`,
-                    borderRadius: '3px',
-                    fontSize: '0.9em'
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold', color: step.step === -1 ? '#d32f2f' : '#1976d2' }}>
-                    {step.step === -1 ? '❌' : `Step ${step.step}`}: {step.message}
+          {/* Main Proposal Card */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 lg:p-10 border border-gray-100 shadow-2xl mb-8">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <span className="text-lg font-bold text-black">#{proposal.referendum_index}</span>
                   </div>
-                  {step.data && Object.keys(step.data).length > 0 && (
-                    <div style={{ marginTop: '5px', fontSize: '0.85em', color: '#666' }}>
-                      {Object.entries(step.data).map(([key, value]) => (
-                        <div key={key}>
-                          <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <span className="text-sm font-medium text-gray-500">Referendum Index</span>
                 </div>
-              ))}
+                <h1 className="text-3xl lg:text-4xl font-black text-gray-900 mb-4 leading-tight">
+                  {proposal.title}
+                </h1>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {getStatusBadge(proposal.status)}
+                {proposal.origin && (
+                  <span className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                    {proposal.origin}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
 
+            {/* Summary */}
+            {proposal.summary && (
+              <div className="mb-8 p-6 bg-gradient-to-r from-purple-50/50 to-pink-50/50 rounded-2xl border border-purple-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  Summary
+                </h3>
+                <p className="text-gray-700 leading-relaxed">{proposal.summary}</p>
+              </div>
+            )}
 
-      {/* Submit Premium Report Section */}
-      {proposal.ual && (
-        <div className="card">
-          <SubmitPremiumReport
-            proposalIndex={proposal.referendum_index}
-            proposalUAL={proposal?.dkg_asset_id}
-            userWallet={userWallet}
-            authSignature={authSignature}
-            authMessage={authMessage}
-            onReportSubmitted={handlePremiumReportSubmitted}
-          />
-        </div>
-      )}
-
-      {/* Premium Reports Section */}
-      {proposal.ual && (
-        <div className="card">
-          <PremiumReports
-            proposalIndex={proposal.referendum_index}
-            userWallet={userWallet}
-            authSignature={authSignature}
-            authMessage={authMessage}
-            refreshKey={premiumReportsRefreshKey}
-          />
-        </div>
-      )}
-
-      {/* Existing Reports */}
-      {reports.length > 0 && (
-        <div className="card">
-          <h2>Community Reports ({reports.length})</h2>
-          <div className="reports-section">
-            {reports.map((report) => (
-              <div key={report.report_id} className="report-item">
-                <div className="report-header">
-                  <div className="report-title">{report.report_name}</div>
-                  {getStatusBadge(report.verification_status)}
+            {/* Details Grid */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="p-6 bg-gray-50 rounded-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="w-5 h-5 text-gray-600" />
+                  <h3 className="font-bold text-gray-900">Proposer</h3>
                 </div>
-                <div className="report-meta">
-                  Submitted by: {report.submitter_wallet.substring(0, 10)}...
-                  {report.submitter_wallet.substring(report.submitter_wallet.length - 8)}
-                  {' | '}
-                  {new Date(report.submitted_at).toLocaleDateString()}
+                <p className="text-sm text-gray-600 font-mono break-all">
+                  {proposal.proposer_address || 'N/A'}
+                </p>
+              </div>
+
+              <div className="p-6 bg-gray-50 rounded-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="w-5 h-5 text-gray-600" />
+                  <h3 className="font-bold text-gray-900">Treasury Proposal ID</h3>
                 </div>
-                {report.report_ual && (
-                  <div className="ual-display" style={{ marginTop: '10px' }}>
-                    <strong>UAL:</strong> {report.report_ual}
-                    <button className="copy-btn" onClick={() => copyToClipboard(report.report_ual)}>
-                      Copy
+                <p className="text-sm text-gray-600">
+                  {proposal.treasury_proposal_id !== -1 ? proposal.treasury_proposal_id : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* DKG Status */}
+            {proposal.ual ? (
+              <div className="p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border-2 border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Database className="w-6 h-6 text-purple-600" />
+                  <h3 className="text-lg font-bold text-gray-900">DKG Knowledge Asset</h3>
+                </div>
+                <div className="bg-white/80 backdrop-blur rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <code className="text-sm text-gray-700 break-all flex-1">{proposal.ual}</code>
+                    <button
+                      onClick={() => copyToClipboard(proposal.ual)}
+                      className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <Copy className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                )}
-                {report.dkg_block_explorer_url && (
-                  <a href={report.dkg_block_explorer_url} target="_blank" rel="noopener noreferrer" className="link" style={{ marginTop: '10px', display: 'inline-block' }}>
-                    View on DKG Explorer →
+                </div>
+                {proposal.block_explorer_url && (
+                  <a
+                    href={proposal.block_explorer_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 rounded-xl text-purple-600 font-semibold transition-colors"
+                  >
+                    View on DKG Explorer
+                    <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
               </div>
-            ))}
+            ) : (
+              <div className="p-6 bg-yellow-50 rounded-2xl border-2 border-yellow-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-6 h-6 text-yellow-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Not yet published to DKG</h3>
+                </div>
+                <p className="text-gray-700 mb-6">
+                  This proposal hasn't been published as a Knowledge Asset yet. Publish it to make it permanently verifiable on the DKG.
+                </p>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={publishDirectAPI}
+                    disabled={submitting}
+                    className="px-6 py-3 text-sm font-bold text-black bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-pink-500/40 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  >
+                    {submitting ? 'Publishing...' : 'Publish to DKG (Recommended)'}
+                  </button>
+                </div>
+
+                <p className="mt-4 text-sm text-gray-600">
+                  💡 <strong>Recommended:</strong> Use DKG Node API for direct publishing with real-time progress tracking
+                </p>
+              </div>
+            )}
+
+            {/* Progress Display */}
+            {showProgress && publishProgress.length > 0 && (
+              <div className="mt-6 p-6 bg-blue-50 rounded-2xl border border-blue-200">
+                <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Publication Progress
+                </h4>
+                <div className="space-y-3">
+                  {publishProgress.map((step, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-xl border-l-4 ${step.step === -1
+                        ? 'bg-red-50 border-red-500'
+                        : 'bg-white border-blue-500'
+                        }`}
+                    >
+                      <div className={`font-semibold ${step.step === -1 ? 'text-red-700' : 'text-blue-700'}`}>
+                        {step.step === -1 ? '❌' : `Step ${step.step}`}: {step.message}
+                      </div>
+                      {step.data && Object.keys(step.data).length > 0 && (
+                        <div className="mt-2 text-sm text-gray-600 space-y-1">
+                          {Object.entries(step.data).map(([key, value]) => (
+                            <div key={key}>
+                              <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Submit Premium Report */}
+          {proposal.ual && (
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 lg:p-10 border border-gray-100 shadow-2xl mb-8">
+              <SubmitPremiumReport
+                proposalIndex={proposal.referendum_index}
+                proposalUAL={proposal?.dkg_asset_id}
+                userWallet={userWallet}
+                authSignature={authSignature}
+                authMessage={authMessage}
+                onReportSubmitted={handlePremiumReportSubmitted}
+              />
+            </div>
+          )}
+
+          {/* Premium Reports */}
+          {proposal.ual && (
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 lg:p-10 border border-gray-100 shadow-2xl mb-8">
+              <PremiumReports
+                proposalIndex={proposal.referendum_index}
+                userWallet={userWallet}
+                authSignature={authSignature}
+                authMessage={authMessage}
+                refreshKey={premiumReportsRefreshKey}
+              />
+            </div>
+          )}
+
+          {/* Community Reports */}
+          {reports.length > 0 && (
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 lg:p-10 border border-gray-100 shadow-2xl">
+              <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-black" />
+                </div>
+                Community Reports ({reports.length})
+              </h2>
+
+              <div className="space-y-4">
+                {reports.map((report) => (
+                  <div
+                    key={report.report_id}
+                    className="p-6 bg-gradient-to-r from-gray-50 to-purple-50/30 rounded-2xl border-l-4 border-purple-500 hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <h3 className="text-lg font-bold text-gray-900">{report.report_name}</h3>
+                      {getStatusBadge(report.verification_status)}
+                    </div>
+
+                    <div className="text-sm text-gray-600 mb-4">
+                      <span className="font-medium">Submitted by:</span>{' '}
+                      <code className="bg-white px-2 py-1 rounded">
+                        {report.submitter_wallet.substring(0, 10)}...
+                        {report.submitter_wallet.substring(report.submitter_wallet.length - 8)}
+                      </code>
+                      {' | '}
+                      {new Date(report.submitted_at).toLocaleDateString()}
+                    </div>
+
+                    {report.report_ual && (
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-4 mb-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-gray-500 mb-1">UAL:</p>
+                            <code className="text-sm text-gray-700 break-all">{report.report_ual}</code>
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(report.report_ual)}
+                            className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Copy className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {report.dkg_block_explorer_url && (
+                      <a
+                        href={report.dkg_block_explorer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-semibold text-sm transition-colors"
+                      >
+                        View on DKG Explorer
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -42,18 +42,17 @@ function Navigation() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? 'bg-white/90 backdrop-blur-md shadow-xl border-b border-purple-100'
-          : 'bg-transparent pt-2' // Slight padding adjustment for sleeker initial look
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? 'bg-white/90 backdrop-blur-md shadow-xl border-b border-purple-100'
+        : 'bg-transparent pt-2' // Slight padding adjustment for sleeker initial look
+        }`}
     >
       <div className="max-w-8xl mx-auto px-6 lg:px-12"> {/* Increased max-width slightly for desktop nav */}
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-xl font-black text-white">D</span>
+              <span className="text-xl font-black text-black">D</span>
             </div>
             <div className="hidden sm:block">
               <span className="text-xl font-extrabold text-gray-900">
@@ -83,7 +82,7 @@ function Navigation() {
           <div className="hidden md:flex items-center gap-4">
             <Link
               to="/proposals"
-              className="px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5"
+              className="px-6 py-2.5 text-sm font-bold text-black bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5"
             >
               Explore Now
             </Link>
@@ -118,7 +117,7 @@ function Navigation() {
               ))}
               <Link
                 to="/proposals"
-                className="block w-full text-center mt-4 px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                className="block w-full text-center mt-4 px-6 py-3 text-sm font-semibold text-black bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Explore Now
@@ -156,7 +155,7 @@ export default function LandingPage() {
             {/* Main Heading */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight text-gray-900 mb-8 leading-[1.1]">
               Decentralized Knowledge<br />
-              <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-black">
                 Meets Governance
               </span>
             </h1>
@@ -170,7 +169,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <Link
                 to="/proposals"
-                className="group px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-pink-500/40 transform hover:-translate-y-1 flex items-center gap-2"
+                className="group px-8 py-4 text-lg font-bold text-black bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-pink-500/40 transform hover:-translate-y-1 flex items-center gap-2"
               >
                 Explore Proposals
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -199,10 +198,10 @@ export default function LandingPage() {
                 >
                   <div className="flex justify-center mb-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-white" />
+                      <stat.icon className="w-6 h-6 text-black" />
                     </div>
                   </div>
-                  <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                  <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-black">
                     {stat.number}
                   </div>
                   <p className="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">
@@ -230,7 +229,7 @@ export default function LandingPage() {
             </span>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 mb-6">
               What is{' '}
-              <span className="bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-black">
                 DKG Governance
               </span>
               ?
@@ -267,10 +266,9 @@ export default function LandingPage() {
                   key={item.title}
                   className="group flex gap-6 p-6 rounded-2xl hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 transition-all duration-300"
                 >
-                  <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${
-                    item.color === 'pink' ? 'from-pink-500 to-purple-600' : 'from-purple-500 to-pink-600'
-                  } rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                    <item.icon className="w-7 h-7 text-white" />
+                  <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color === 'pink' ? 'from-pink-500 to-purple-600' : 'from-purple-500 to-pink-600'
+                    } rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                    <item.icon className="w-7 h-7 text-black" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
@@ -291,11 +289,11 @@ export default function LandingPage() {
                       <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
                       <span className="text-sm font-semibold text-gray-600">LIVE ON MAINNET</span>
                     </div>
-                    
+
                     <h3 className="text-3xl font-bold text-gray-900 mb-6">
                       How It Works
                     </h3>
-                    
+
                     <div className="space-y-4">
                       {[
                         { step: "01", text: "Proposals fetched from Polkadot OpenGov" },
@@ -385,7 +383,7 @@ export default function LandingPage() {
               >
                 {/* Icon */}
                 <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+                  <feature.icon className="w-8 h-8 text-black" />
                 </div>
 
                 {/* Content */}
@@ -404,27 +402,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-600 via-purple-600 to-pink-700" />
-        
-        {/* Pattern Overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-
-        {/* Animated Blobs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-
-     
-      </section>
-
       {/* Footer */}
       <footer className="bg-gray-950 text-gray-400 py-16">
         <div className=" mx-auto px-4 sm:px-6 lg:px-8">
@@ -433,10 +410,10 @@ export default function LandingPage() {
             <div className="lg:col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-xl">
-                  <span className="text-2xl font-black text-white">D</span>
+                  <span className="text-2xl font-black text-black">D</span>
                 </div>
                 <div>
-                  <span className="text-xl font-bold text-white">DKG Governance</span>
+                  <span className="text-xl font-bold text-black">DKG Governance</span>
                   <p className="text-xs text-gray-500">Powered by OriginTrail</p>
                 </div>
               </div>
@@ -445,17 +422,17 @@ export default function LandingPage() {
               </p>
               <div className="flex gap-4">
                 <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gradient-to-r hover:from-pink-600 hover:to-purple-600 transition-all">
-                  <span className="text-white font-bold">𝕏</span>
+                  <span className="text-black font-bold">𝕏</span>
                 </a>
                 <a href="#" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gradient-to-r hover:from-pink-600 hover:to-purple-600 transition-all">
-                  <Globe className="w-5 h-5 text-white" />
+                  <Globe className="w-5 h-5 text-black" />
                 </a>
               </div>
             </div>
 
             {/* Navigation Column */}
             <div>
-              <h3 className="text-white font-bold text-base mb-4 uppercase tracking-wider">Platform</h3>
+              <h3 className="text-black font-bold text-base mb-4 uppercase tracking-wider">Platform</h3>
               <ul className="space-y-3">
                 <li><Link to="/proposals" className="hover:text-pink-400 transition text-sm">Proposals</Link></li>
                 <li><a href="#about" className="hover:text-pink-400 transition text-sm">About</a></li>
@@ -466,7 +443,7 @@ export default function LandingPage() {
 
             {/* Resources Column */}
             <div>
-              <h3 className="text-white font-bold text-base mb-4 uppercase tracking-wider">Resources</h3>
+              <h3 className="text-black font-bold text-base mb-4 uppercase tracking-wider">Resources</h3>
               <ul className="space-y-3">
                 <li><a href="https://polkadot.network" target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition text-sm">Polkadot Network</a></li>
                 <li><a href="https://origintrail.io" target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition text-sm">OriginTrail</a></li>
