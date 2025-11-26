@@ -14,6 +14,10 @@ function ProposalList() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterUAL, setFilterUAL] = useState('');
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   const [stats, setStats] = useState({
     total: 0,
     withUAL: 0,
@@ -29,6 +33,7 @@ function ProposalList() {
 
   useEffect(() => {
     applyFilters();
+    setCurrentPage(1); // Reset to first page when filters change
   }, [proposals, searchIndex, searchTitle, filterStatus, filterUAL]);
 
   const fetchProposals = async () => {
@@ -117,6 +122,22 @@ function ProposalList() {
 
   // Get unique statuses for filter dropdown
   const uniqueStatuses = [...new Set(proposals.map(p => p.status))].sort();
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProposals.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProposals = filteredProposals.slice(startIndex, endIndex);
+
+  // Pagination navigation functions
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToLastPage = () => setCurrentPage(totalPages);
+  const goToPreviousPage = () => setCurrentPage(prev => Math.max(1, prev - 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(totalPages, prev + 1));
 
   return (
     <div>
@@ -233,7 +254,7 @@ function ProposalList() {
                   </td>
                 </tr>
               ) : (
-                filteredProposals.map((proposal) => (
+                currentProposals.map((proposal) => (
                   <tr key={proposal.referendum_index} onClick={() => navigate(`/proposal/${proposal.referendum_index}`)}>
                     <td>
                       <strong>#{proposal.referendum_index}</strong>
@@ -278,9 +299,116 @@ function ProposalList() {
           </table>
         </div>
 
+        {/* Pagination Controls */}
         {filteredProposals.length > 0 && (
-          <div style={{ marginTop: '20px', textAlign: 'center', color: '#666', fontSize: '0.9em' }}>
-            Showing {filteredProposals.length} of {proposals.length} proposals
+          <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+              {/* Pagination Info */}
+              <div style={{ color: '#666', fontSize: '0.9em' }}>
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredProposals.length)} of {filteredProposals.length} proposals
+                {filteredProposals.length !== proposals.length && ` (filtered from ${proposals.length} total)`}
+              </div>
+
+              {/* Pagination Buttons */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={goToFirstPage}
+                    disabled={currentPage === 1}
+                    style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                  >
+                    ««
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                  >
+                    ‹
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {(() => {
+                      const pageNumbers = [];
+                      const maxVisiblePages = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                      if (endPage - startPage < maxVisiblePages - 1) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                      }
+
+                      if (startPage > 1) {
+                        pageNumbers.push(
+                          <button
+                            key={1}
+                            className="btn btn-secondary"
+                            onClick={() => goToPage(1)}
+                            style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                          >
+                            1
+                          </button>
+                        );
+                        if (startPage > 2) {
+                          pageNumbers.push(<span key="ellipsis-start" style={{ padding: '0 5px' }}>...</span>);
+                        }
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(
+                          <button
+                            key={i}
+                            className={`btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => goToPage(i)}
+                            style={{ padding: '6px 12px', fontSize: '0.9em', fontWeight: i === currentPage ? 'bold' : 'normal' }}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pageNumbers.push(<span key="ellipsis-end" style={{ padding: '0 5px' }}>...</span>);
+                        }
+                        pageNumbers.push(
+                          <button
+                            key={totalPages}
+                            className="btn btn-secondary"
+                            onClick={() => goToPage(totalPages)}
+                            style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+
+                      return pageNumbers;
+                    })()}
+                  </div>
+
+                  <button
+                    className="btn btn-secondary"
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                  >
+                    ›
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={goToLastPage}
+                    disabled={currentPage === totalPages}
+                    style={{ padding: '6px 12px', fontSize: '0.9em' }}
+                  >
+                    »»
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
