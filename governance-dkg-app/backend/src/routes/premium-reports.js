@@ -22,6 +22,7 @@ import {
 import { verifyReport } from "../services/ai-verification-service.js";
 import { publishAsset, getDKGExplorerURL } from "../services/dkg-service.js";
 import { publishAssetDirect } from "../services/dkg-direct-service.js";
+import { generatePrivateDataHash } from "../services/hash-service.js";
 
 const router = express.Router();
 
@@ -210,7 +211,8 @@ router.post("/submit", authenticateWallet, async (req, res) => {
     const {
       referendum_index,
       report_name,
-      jsonld_data,
+      public_jsonld_data,
+      private_jsonld_data,
       is_premium,
       premium_price_trac,
       payee_wallet,
@@ -219,10 +221,10 @@ router.post("/submit", authenticateWallet, async (req, res) => {
     const userWallet = req.userWallet;
 
     // Validate required fields
-    if (!referendum_index || !jsonld_data) {
+    if (!referendum_index || !public_jsonld_data) {
       return res.status(400).json({
         error: "Missing required fields",
-        required: ["referendum_index", "jsonld_data"],
+        required: ["referendum_index", "public_jsonld_data"],
       });
     }
 
@@ -258,28 +260,44 @@ router.post("/submit", authenticateWallet, async (req, res) => {
       });
     }
 
-    // Parse JSON-LD
-    let parsedData;
+    // Parse public JSON-LD
+    let parsedPublicData;
     try {
-      parsedData =
-        typeof jsonld_data === "string" ? JSON.parse(jsonld_data) : jsonld_data;
+      parsedPublicData =
+        typeof public_jsonld_data === "string" ? JSON.parse(public_jsonld_data) : public_jsonld_data;
 
       // Check for required JSON-LD fields
-      if (!parsedData["@context"] || !parsedData["@type"]) {
+      if (!parsedPublicData["@context"] || !parsedPublicData["@type"]) {
         return res.status(400).json({
-          error: "Invalid JSON-LD: missing @context or @type",
+          error: "Invalid public JSON-LD: missing @context or @type",
         });
       }
     } catch (error) {
       return res.status(400).json({
-        error: "Invalid JSON-LD format",
+        error: "Invalid public JSON-LD format",
         details: error.message,
       });
     }
 
-    // Calculate data size
-    const jsonldString = JSON.stringify(parsedData);
-    const dataSize = Buffer.byteLength(jsonldString, "utf8");
+    // Parse private JSON-LD if provided
+    let parsedPrivateData = null;
+    let privateDataString = null;
+    if (private_jsonld_data && private_jsonld_data.trim()) {
+      try {
+        parsedPrivateData =
+          typeof private_jsonld_data === "string" ? JSON.parse(private_jsonld_data) : private_jsonld_data;
+        privateDataString = JSON.stringify(parsedPrivateData);
+      } catch (error) {
+        return res.status(400).json({
+          error: "Invalid private JSON-LD format",
+          details: error.message,
+        });
+      }
+    }
+
+    // Calculate public data size
+    const publicJsonldString = JSON.stringify(parsedPublicData);
+    const publicDataSize = Buffer.byteLength(publicJsonldString, "utf8");
 
     // Check if user is admin (for author_type)
     const adminAddresses = (process.env.ADMIN_ADDRESSES || "")
@@ -289,13 +307,25 @@ router.post("/submit", authenticateWallet, async (req, res) => {
     const isAdmin = adminAddresses.includes(userWallet.toLowerCase());
     const authorType = isAdmin ? "admin" : "community";
 
-    // Insert report (just store in database, no verification yet)
+    // Generate hash for private data if provided
+    let privateHash = null;
+    let privateDataSize = 0;
+    if (privateDataString) {
+      // Generate unique hash for private data
+      privateHash = generatePrivateDataHash(privateDataString, Date.now());
+      privateDataSize = Buffer.byteLength(privateDataString, "utf8");
+    }
+
+    // Insert report with both public and private data
     const result = reportQueries.insert({
       referendum_index,
       submitter_wallet: userWallet,
       report_name: report_name || `Premium Report ${Date.now()}`,
-      jsonld_data: jsonldString,
-      data_size_bytes: dataSize,
+      jsonld_data: publicJsonldString,
+      data_size_bytes: publicDataSize,
+      private_jsonld_data: privateDataString || null,
+      private_data_hash: privateHash,
+      private_data_size_bytes: privateDataSize || null,
       required_payment_trac: 0, // No submission fee for premium reports
       payment_address: null,
       is_premium: is_premium ? 1 : 0,
@@ -312,6 +342,9 @@ router.post("/submit", authenticateWallet, async (req, res) => {
         premium_price_trac || 0
       } TRAC`
     );
+    if (privateHash) {
+      console.log(`   Private data stored with hash: ${privateHash}`);
+    }
 
     res.status(201).json({
       success: true,
@@ -321,17 +354,20 @@ router.post("/submit", authenticateWallet, async (req, res) => {
         referendum_index,
         submitter_wallet: userWallet,
         report_name: report_name || `Premium Report ${Date.now()}`,
-        data_size_kb: (dataSize / 1024).toFixed(2),
+        data_size_kb: (publicDataSize / 1024).toFixed(2),
         is_premium,
         premium_price_trac: is_premium ? premium_price_trac : null,
         payee_wallet: is_premium ? payee_wallet : null,
         author_type: authorType,
         verification_status: "pending",
+        private_hash: privateHash,
+        has_private_data: !!privateHash,
       },
       next_steps: [
-        "AI verification will be triggered",
+        "AI verification will be triggered (only public data will be verified)",
         "If approved, report will be published to proposal's existing DKG UAL",
-      ],
+        privateHash ? "Private data hash will be added to public data before DKG publication" : null,
+      ].filter(Boolean),
     });
   } catch (error) {
     console.error("Error submitting premium report:", error);
@@ -488,6 +524,13 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
 
       console.log(`✅ Report ${reportId} verified, publishing to DKG...`);
 
+      // Check if report has private data hash
+      const privateHash = report.private_data_hash;
+
+      if (privateHash) {
+        console.log(`   Adding private data hash to public data: ${privateHash}`);
+      }
+
       // Ensure JSON-LD has proper structure for DKG
       // Put user fields FIRST, then override with required fields
       const dkgReadyJsonLD = {
@@ -516,6 +559,8 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
         "dkg:reportId": reportId,
         "dkg:premiumPrice": report.premium_price_trac,
         "dkg:payeeWallet": report.payee_wallet,
+        // Add private data hash if exists
+        ...(privateHash && { "dkg:privateDataHash": privateHash }),
       };
 
       // Publish to DKG
@@ -933,5 +978,95 @@ router.get(
     }
   }
 );
+
+/**
+ * GET /api/premium-reports/private/:hash
+ * Fetch private report data using hash
+ * Note: This should be protected with access control in production
+ */
+router.get("/private/:hash", optionalAuthenticateWallet, (req, res) => {
+  try {
+    const privateHash = req.params.hash;
+    const userWallet = req.userWallet;
+
+    // Fetch report by private data hash
+    const db = require("../database/db.js").getDatabase();
+    const report = db.prepare('SELECT * FROM reports WHERE private_data_hash = ?').get(privateHash);
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        error: "Report with this private data hash not found",
+      });
+    }
+
+    if (!report.private_jsonld_data) {
+      return res.status(404).json({
+        success: false,
+        error: "No private data available for this hash",
+      });
+    }
+
+    // Check if report is premium and if user has access
+    if (report.is_premium) {
+      // If user is not authenticated, deny access
+      if (!userWallet) {
+        return res.status(401).json({
+          success: false,
+          error: "Authentication required to access private data for premium reports",
+          report_id: report.report_id,
+          premium_price: report.premium_price_trac,
+        });
+      }
+
+      // Check if user is the submitter
+      const isSubmitter = report.submitter_wallet.toLowerCase() === userWallet.toLowerCase();
+
+      // Check if user has purchased access
+      const hasAccess = checkUserAccess(report.report_id, userWallet);
+
+      // Check if user is admin
+      const adminAddresses = (process.env.ADMIN_ADDRESSES || "")
+        .split(",")
+        .map((addr) => addr.trim().toLowerCase())
+        .filter((addr) => addr);
+      const isAdmin = adminAddresses.includes(userWallet.toLowerCase());
+
+      if (!isSubmitter && !hasAccess && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          error: "Access denied. You must purchase access to this premium report to view private data.",
+          report_id: report.report_id,
+          premium_price: report.premium_price_trac,
+          payee_wallet: report.payee_wallet,
+        });
+      }
+    }
+
+    // Parse and return private data
+    let parsedPrivateData;
+    try {
+      parsedPrivateData = JSON.parse(report.private_jsonld_data);
+    } catch (error) {
+      parsedPrivateData = report.private_jsonld_data;
+    }
+
+    res.json({
+      success: true,
+      private_data: parsedPrivateData,
+      report_id: report.report_id,
+      private_hash: report.private_data_hash,
+      data_size_kb: (report.private_data_size_bytes / 1024).toFixed(2),
+      submitted_at: report.submitted_at,
+    });
+  } catch (error) {
+    console.error("Error fetching private data:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch private data",
+      details: error.message,
+    });
+  }
+});
 
 export default router;

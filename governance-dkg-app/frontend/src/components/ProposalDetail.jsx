@@ -492,68 +492,6 @@ function ProposalDetail() {
         )}
       </div>
 
-      {/* Report Submission Section */}
-      {proposal.ual && (
-        <div className="card">
-          <h2>Submit Additional Report</h2>
-          <p style={{ color: '#666', marginBottom: '20px' }}>
-            Share progress updates, analysis, or additional context about this proposal.
-          </p>
-
-          <form onSubmit={handleSubmitReport}>
-            <div className="form-group">
-              <label>Your Wallet Address *</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="0x..."
-                value={submitterWallet}
-                onChange={(e) => setSubmitterWallet(e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Report JSON-LD * <button type="button" className="copy-btn" onClick={loadExampleReport}>Load Example</button></label>
-              <textarea
-                className="textarea"
-                placeholder='{"@context": {...}, "@type": "Report", ...}'
-                value={reportJSONLD}
-                onChange={(e) => setReportJSONLD(e.target.value)}
-                disabled={submitting}
-              />
-              <div style={{ fontSize: '0.85em', color: '#666' }}>
-                Size: {(new Blob([reportJSONLD]).size / 1024).toFixed(2)} KB
-                {reportJSONLD && ` | Payment: ${(0.05 + (new Blob([reportJSONLD]).size / 1024) * 0.01).toFixed(4)} TRAC`}
-              </div>
-            </div>
-
-            <div className="payment-info">
-              <strong>💰 Payment Information (Simulated)</strong>
-              <p style={{ margin: '5px 0 0 0', fontSize: '0.9em' }}>
-                In production, you would send the required TRAC tokens to confirm your submission.
-                For this demo, payment verification is automatic.
-              </p>
-            </div>
-
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Processing...' : 'Submit for Verification'}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {!proposal.ual && (
-        <div className="card">
-          <h2>Submit Additional Report</h2>
-          <div style={{ padding: '20px', background: '#f8d7da', borderRadius: '5px', color: '#721c24' }}>
-            <strong>⚠️ Reports Disabled</strong>
-            <p style={{ margin: '10px 0 0 0' }}>
-              This proposal must be published to DKG before reports can be submitted.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Submit Premium Report Section */}
       {proposal.ual && (

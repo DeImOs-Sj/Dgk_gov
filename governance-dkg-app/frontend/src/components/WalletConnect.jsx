@@ -67,7 +67,11 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
       ]);
     } catch (switchError) {
       // If network not added (error code 4902), add it
-      if (switchError.code === 4902 || switchError.code === -32603) {
+      // Check both direct error code and wrapped error info (ethers v6 wraps errors)
+      const errorCode = switchError.code || switchError.info?.error?.code;
+      const isChainNotAdded = errorCode === 4902 || errorCode === -32603;
+
+      if (isChainNotAdded) {
         try {
           await provider.send('wallet_addEthereumChain', [
             {
@@ -85,7 +89,7 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
         } catch (addError) {
           throw new Error('Failed to add Base Sepolia network. Please add it manually in MetaMask.');
         }
-      } else if (switchError.code === 4001) {
+      } else if (errorCode === 4001) {
         throw new Error('You rejected the network switch. Please switch to Base Sepolia to use premium features.');
       } else {
         throw switchError;
@@ -194,41 +198,42 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.stickyContainer}>
       {!wallet ? (
-        <div>
+        <>
           <button
             onClick={connectWallet}
             disabled={isConnecting}
             style={styles.connectButton}
           >
-            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            {isConnecting ? '🔄 Connecting...' : '🔗 Connect Wallet'}
           </button>
 
           {!isMetaMaskInstalled() && (
-            <p style={styles.warning}>
+            <div style={styles.tooltip}>
               MetaMask not detected.
               <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" style={styles.link}>
                 Install MetaMask
               </a>
-            </p>
+            </div>
           )}
-        </div>
+
+          {error && (
+            <div style={styles.errorTooltip}>
+              {error}
+            </div>
+          )}
+        </>
       ) : (
-        <div style={styles.connectedContainer}>
-          <div style={styles.walletInfo}>
-            <span style={styles.walletLabel}>Connected:</span>
-            <span style={styles.walletAddress}>{formatAddress(wallet)}</span>
+        <div style={styles.connectedBox}>
+          <div style={styles.connectedHeader}>
+            <span style={styles.connectedIcon}>✅</span>
+            <span style={styles.connectedText}>Wallet Connected!</span>
           </div>
+          <div style={styles.walletAddress}>{formatAddress(wallet)}</div>
           <button onClick={disconnectWallet} style={styles.disconnectButton}>
             Disconnect
           </button>
-        </div>
-      )}
-
-      {error && (
-        <div style={styles.error}>
-          {error}
         </div>
       )}
     </div>
@@ -236,52 +241,72 @@ const WalletConnect = ({ onWalletConnected, onWalletDisconnected }) => {
 };
 
 const styles = {
-  container: {
-    padding: '1rem',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    marginBottom: '1rem'
+  stickyContainer: {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    zIndex: 1000,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    alignItems: 'flex-end'
   },
   connectButton: {
     backgroundColor: '#007bff',
     color: 'white',
-    padding: '0.75rem 1.5rem',
+    padding: '12px 24px',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '50px',
     fontSize: '1rem',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background-color 0.2s'
-  },
-  connectedContainer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '1rem',
-    flexWrap: 'wrap'
-  },
-  walletInfo: {
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(0, 123, 255, 0.3)',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '8px',
+    whiteSpace: 'nowrap'
   },
-  walletLabel: {
-    color: '#6c757d',
-    fontSize: '0.875rem',
-    fontWeight: '500'
+  connectedBox: {
+    backgroundColor: 'white',
+    padding: '16px',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    minWidth: '250px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    border: '2px solid #28a745'
+  },
+  connectedHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    paddingBottom: '8px',
+    borderBottom: '1px solid #e9ecef'
+  },
+  connectedIcon: {
+    fontSize: '1.25rem'
+  },
+  connectedText: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#28a745'
   },
   walletAddress: {
-    backgroundColor: '#e9ecef',
-    padding: '0.25rem 0.75rem',
-    borderRadius: '4px',
+    backgroundColor: '#f8f9fa',
+    padding: '8px 12px',
+    borderRadius: '6px',
     fontFamily: 'monospace',
-    fontSize: '0.875rem',
-    fontWeight: '600'
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#495057',
+    textAlign: 'center'
   },
   disconnectButton: {
     backgroundColor: '#dc3545',
     color: 'white',
-    padding: '0.5rem 1rem',
+    padding: '8px 16px',
     border: 'none',
     borderRadius: '6px',
     fontSize: '0.875rem',
@@ -289,28 +314,37 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.2s'
   },
-  warning: {
-    marginTop: '0.75rem',
-    color: '#856404',
+  tooltip: {
+    position: 'absolute',
+    bottom: '70px',
+    left: '0',
     backgroundColor: '#fff3cd',
+    color: '#856404',
     border: '1px solid #ffeaa7',
-    padding: '0.75rem',
-    borderRadius: '4px',
-    fontSize: '0.875rem'
+    padding: '12px',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    maxWidth: '250px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
   },
   link: {
-    marginLeft: '0.5rem',
+    display: 'block',
+    marginTop: '8px',
     color: '#007bff',
     textDecoration: 'underline'
   },
-  error: {
-    marginTop: '0.75rem',
-    color: '#721c24',
+  errorTooltip: {
+    position: 'absolute',
+    bottom: '70px',
+    left: '0',
     backgroundColor: '#f8d7da',
+    color: '#721c24',
     border: '1px solid #f5c6cb',
-    padding: '0.75rem',
-    borderRadius: '4px',
-    fontSize: '0.875rem'
+    padding: '12px',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    maxWidth: '250px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
   }
 };
 

@@ -41,8 +41,13 @@ CREATE TABLE IF NOT EXISTS reports (
   report_name TEXT,
 
   -- Report Content
-  jsonld_data TEXT NOT NULL, -- JSON-LD as string
+  jsonld_data TEXT NOT NULL, -- Public JSON-LD as string (sent to AI & published to DKG)
   data_size_bytes INTEGER,
+
+  -- Private Data Fields (stored locally, not sent to AI or DKG)
+  private_jsonld_data TEXT, -- Private JSON-LD data stored locally
+  private_data_hash TEXT UNIQUE, -- SHA-256 hash of private data (added to public data on DKG)
+  private_data_size_bytes INTEGER,
 
   -- Premium Report Fields (X402)
   is_premium BOOLEAN DEFAULT 0, -- Premium reports require payment to access
@@ -130,6 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_premium_access_user ON premium_report_access(user
 CREATE INDEX IF NOT EXISTS idx_premium_access_report ON premium_report_access(report_id);
 CREATE INDEX IF NOT EXISTS idx_ual_mappings_proposal ON ual_premium_reports(proposal_ual);
 CREATE INDEX IF NOT EXISTS idx_ual_mappings_report ON ual_premium_reports(report_id);
+CREATE INDEX IF NOT EXISTS idx_reports_private_hash ON reports(private_data_hash);
 `;
 
 export default {

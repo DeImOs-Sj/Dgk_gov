@@ -120,9 +120,10 @@ export const reportQueries = {
     const stmt = db.prepare(`
       INSERT INTO reports (
         referendum_index, submitter_wallet, report_name, jsonld_data,
-        data_size_bytes, required_payment_trac, payment_address,
+        data_size_bytes, private_jsonld_data, private_data_hash, private_data_size_bytes,
+        required_payment_trac, payment_address,
         is_premium, premium_price_trac, payee_wallet, author_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     return stmt.run(
@@ -131,6 +132,9 @@ export const reportQueries = {
       report.report_name,
       report.jsonld_data,
       report.data_size_bytes,
+      report.private_jsonld_data || null,
+      report.private_data_hash || null,
+      report.private_data_size_bytes || null,
       report.required_payment_trac,
       report.payment_address,
       report.is_premium || 0,

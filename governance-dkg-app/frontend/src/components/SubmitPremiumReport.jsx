@@ -10,8 +10,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignature, authMessage, onReportSubmitted }) => {
   const [reportName, setReportName] = useState('');
-  const [jsonldData, setJsonldData] = useState('');
-  const [isPremium, setIsPremium] = useState(true);
+  const [publicJsonldData, setPublicJsonldData] = useState('');
+  const [privateJsonldData, setPrivateJsonldData] = useState('');
+  const [isPremium, setIsPremium] = useState(false);
   const [premiumPrice, setPremiumPrice] = useState('10');
   const [payeeWallet, setPayeeWallet] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +46,7 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
   };
   // Load example premium report
   const loadExampleReport = () => {
-    const exampleReport = {
+    const examplePublicReport = {
       "@context": {
         "schema": "https://schema.org/",
         "polkadot": "https://polkadot.network/governance/",
@@ -156,7 +157,35 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
       }
     };
 
-    setJsonldData(JSON.stringify(exampleReport, null, 2));
+    const examplePrivateReport = {
+      "@context": {
+        "schema": "https://schema.org/",
+        "polkadot": "https://polkadot.network/governance/"
+      },
+      "@type": "schema:PrivateData",
+      "sensitiveInformation": {
+        "internalNotes": "Confidential analysis shared only with authorized parties",
+        "detailedFinancials": {
+          "actualCosts": "More granular cost breakdown available here",
+          "vendorContracts": "Details about specific vendors and contracts"
+        },
+        "riskMitigationStrategies": [
+          "Proprietary risk assessment methodologies",
+          "Internal stakeholder concerns and mitigation plans"
+        ],
+        "competitiveIntelligence": {
+          "marketAnalysis": "Detailed competitive landscape analysis",
+          "strategicRecommendations": "Internal strategic recommendations"
+        }
+      },
+      "metadata": {
+        "classification": "confidential",
+        "accessLevel": "premium-only"
+      }
+    };
+
+    setPublicJsonldData(JSON.stringify(examplePublicReport, null, 2));
+    setPrivateJsonldData(JSON.stringify(examplePrivateReport, null, 2));
   };
 
   // Handle form submission
@@ -171,8 +200,8 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
       return;
     }
 
-    if (!jsonldData.trim()) {
-      setError('Please provide JSON-LD data for your report');
+    if (!publicJsonldData.trim()) {
+      setError('Please provide public JSON-LD data for your report');
       return;
     }
 
@@ -186,17 +215,28 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
       return;
     }
 
-    // Validate JSON
-    let parsedData;
+    // Validate public JSON
+    let parsedPublicData;
     try {
-      parsedData = JSON.parse(jsonldData);
-      if (!parsedData['@context'] || !parsedData['@type']) {
-        setError('Invalid JSON-LD: must include @context and @type fields');
+      parsedPublicData = JSON.parse(publicJsonldData);
+      if (!parsedPublicData['@context'] || !parsedPublicData['@type']) {
+        setError('Invalid public JSON-LD: must include @context and @type fields');
         return;
       }
     } catch (parseErr) {
-      setError('Invalid JSON: ' + parseErr.message);
+      setError('Invalid public JSON: ' + parseErr.message);
       return;
+    }
+
+    // Validate private JSON if provided
+    let parsedPrivateData = null;
+    if (privateJsonldData.trim()) {
+      try {
+        parsedPrivateData = JSON.parse(privateJsonldData);
+      } catch (parseErr) {
+        setError('Invalid private JSON: ' + parseErr.message);
+        return;
+      }
     }
 
     try {
@@ -207,7 +247,8 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
         {
           referendum_index: proposalIndex,
           report_name: reportName || `Premium Report ${Date.now()}`,
-          jsonld_data: jsonldData,
+          public_jsonld_data: publicJsonldData,
+          private_jsonld_data: privateJsonldData || null,
           is_premium: isPremium,
           premium_price_trac: isPremium ? parseFloat(premiumPrice) : null,
           payee_wallet: isPremium ? payeeWallet : null
@@ -250,7 +291,8 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
 
                   // Reset form
                   setReportName('');
-                  setJsonldData('');
+                  setPublicJsonldData('');
+                  setPrivateJsonldData('');
                   setPremiumPrice('10');
                   setPayeeWallet(userWallet || '');
                   setShowForm(false);
@@ -290,20 +332,41 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
   };
 
   // Calculate estimated data size
-  const getDataSize = () => {
-    if (!jsonldData) return 0;
-    return (new Blob([jsonldData]).size / 1024).toFixed(2);
+  const getPublicDataSize = () => {
+    if (!publicJsonldData) return 0;
+    return (new Blob([publicJsonldData]).size / 1024).toFixed(2);
+  };
+
+  const getPrivateDataSize = () => {
+    if (!privateJsonldData) return 0;
+    return (new Blob([privateJsonldData]).size / 1024).toFixed(2);
+  };
+
+  // Calculate total data size (public + private)
+  const getTotalDataSize = () => {
+    const publicSize = parseFloat(getPublicDataSize()) || 0;
+    const privateSize = parseFloat(getPrivateDataSize()) || 0;
+    return (publicSize + privateSize).toFixed(2);
+  };
+
+  // Calculate submission fee based on total data size
+  const calculateFee = () => {
+    const BASE_FEE = 0.05; // Base fee in TRAC
+    const PER_KB_FEE = 0.01; // Fee per KB in TRAC
+    const totalSizeKB = parseFloat(getTotalDataSize()) || 0;
+    const fee = BASE_FEE + (totalSizeKB * PER_KB_FEE);
+    return fee.toFixed(4);
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h3 style={styles.title}>Submit Premium Report</h3>
+        <h3 style={styles.title}>Submit Report</h3>
         <button
           onClick={() => setShowForm(!showForm)}
           style={{...styles.toggleButton, ...(showForm ? styles.toggleButtonActive : {})}}
         >
-          {showForm ? 'Hide Form' : 'Create Premium Report'}
+          {showForm ? 'Hide Form' : 'Create Report'}
         </button>
       </div>
 
@@ -319,22 +382,21 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
         </div>
       )}
 
-      {!userWallet && (
-        <div style={styles.warning}>
-          <strong>⚠️ Wallet Not Connected</strong>
-          <p style={{ margin: '5px 0 0 0' }}>
-            Please connect your wallet above to submit premium reports.
-          </p>
-        </div>
-      )}
-
-      {showForm && userWallet && (
+      {showForm && (
         <form onSubmit={handleSubmit} style={styles.form}>
+          {!userWallet && (
+            <div style={styles.warningBox}>
+              <strong>⚠️ Wallet Not Connected</strong>
+              <p style={{ margin: '5px 0 10px 0', fontSize: '0.9rem' }}>
+                You need to connect your wallet to submit reports. Please connect your wallet above.
+              </p>
+            </div>
+          )}
           <div style={styles.infoBox}>
-            <h4 style={styles.infoTitle}>What are Premium Reports?</h4>
+            <h4 style={styles.infoTitle}>Report Submission</h4>
             <p style={styles.infoText}>
-              Premium reports are in-depth analyses that other users can purchase with USDC tokens.
-              You set the price, and users pay to access your expert insights.
+              Submit reports with public data (always visible) and optional private data (stored locally).
+              You can make reports premium to require payment for access, or keep them free for everyone.
             </p>
           </div>
 
@@ -355,7 +417,7 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
 
           <div style={styles.formGroup}>
             <label style={styles.label}>
-              Report Data (JSON-LD) *
+              Public Report Data (JSON-LD) *
               <button
                 type="button"
                 onClick={loadExampleReport}
@@ -365,18 +427,60 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
                 Load Example
               </button>
             </label>
+            <div style={styles.infoText}>
+              This data will be sent to the AI agent for verification and published to the DKG network.
+            </div>
             <textarea
               style={styles.textarea}
-              placeholder='{"@context": {...}, "@type": "PremiumReport", ...}'
-              value={jsonldData}
-              onChange={(e) => setJsonldData(e.target.value)}
+              placeholder='{"@context": {...}, "@type": "Report", ...}'
+              value={publicJsonldData}
+              onChange={(e) => setPublicJsonldData(e.target.value)}
               disabled={submitting}
               rows={12}
             />
             <div style={styles.metaInfo}>
-              Data size: {getDataSize()} KB
+              Public data size: {getPublicDataSize()} KB
             </div>
           </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Private Report Data (JSON-LD)
+              <span style={styles.optional}> (optional)</span>
+            </label>
+            <div style={styles.infoText}>
+              This data will be stored locally in the database and NOT sent to the AI agent or published to DKG.
+              A hash reference will be added to the public data.
+            </div>
+            <textarea
+              style={styles.textarea}
+              placeholder='{"@context": {...}, "@type": "PrivateData", ...}'
+              value={privateJsonldData}
+              onChange={(e) => setPrivateJsonldData(e.target.value)}
+              disabled={submitting}
+              rows={12}
+            />
+            <div style={styles.metaInfo}>
+              Private data size: {getPrivateDataSize()} KB
+            </div>
+          </div>
+
+          {(publicJsonldData || privateJsonldData) && (
+            <div style={styles.feeBox}>
+              <div style={styles.feeRow}>
+                <span>Total data size:</span>
+                <strong>{getTotalDataSize()} KB</strong>
+              </div>
+              <div style={styles.feeRow}>
+                <span>Submission fee (stake):</span>
+                <strong>{calculateFee()} TRAC</strong>
+              </div>
+              <div style={styles.feeNote}>
+                💰 In production, you would stake the required TRAC tokens to confirm your submission.
+                For this demo, payment verification is automatic.
+              </div>
+            </div>
+          )}
 
           <div style={styles.formGroup}>
             <label style={styles.checkboxLabel}>
@@ -441,13 +545,22 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
                 ...(submitting || !userWallet ? styles.submitButtonDisabled : {})
               }}
             >
-              {submitting ? 'Submitting...' : 'Submit Premium Report'}
+              {submitting ? 'Submitting...' : `Submit ${isPremium ? 'Premium' : 'Public'} Report`}
             </button>
           </div>
 
           <div style={styles.note}>
-            <strong>Note:</strong> Your report will undergo AI verification before being published to the DKG.
-            Once verified, other users can discover and purchase access to it.
+            <strong>Note:</strong> Only the public data will be sent to the AI agent for verification.
+            {privateJsonldData && (
+              <span> The private data will be stored locally with a unique hash, and the hash reference
+              will be added to the public data before publishing to the DKG.</span>
+            )}
+            {isPremium && (
+              <span> This is a premium report - users must pay {premiumPrice} USDC to access it.</span>
+            )}
+            {!isPremium && (
+              <span> This is a free public report - anyone can view it.</span>
+            )}
           </div>
         </form>
       )}
@@ -629,6 +742,36 @@ const styles = {
     fontSize: '0.85rem',
     color: '#495057',
     lineHeight: '1.5'
+  },
+  warningBox: {
+    backgroundColor: '#fff3cd',
+    color: '#856404',
+    padding: '1rem',
+    borderRadius: '6px',
+    marginBottom: '1.5rem',
+    border: '1px solid #ffeeba'
+  },
+  feeBox: {
+    backgroundColor: '#f8f9fa',
+    padding: '1rem',
+    borderRadius: '6px',
+    marginBottom: '1.5rem',
+    border: '1px solid #dee2e6'
+  },
+  feeRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.5rem',
+    fontSize: '0.95rem'
+  },
+  feeNote: {
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid #dee2e6',
+    fontSize: '0.85rem',
+    color: '#6c757d',
+    lineHeight: '1.4'
   }
 };
 
