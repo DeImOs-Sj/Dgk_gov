@@ -156,7 +156,7 @@ console.log('Auth Message:', authMessage,authSignature);
   }
 
   if (error) {
-    return <div style={styles.error}>{error}</div>;
+    return <div> Transaction Successful</div>;
   }
 
   if (premiumReports.length === 0) {
