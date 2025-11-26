@@ -531,11 +531,19 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
         console.log(`   Adding private data hash to public data: ${privateHash}`);
       }
 
+      // Filter out null/undefined values from user data to avoid JSON-LD errors
+      const cleanedReportData = Object.entries(reportData).reduce((acc, [key, value]) => {
+        if (value !== null && value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
       // Ensure JSON-LD has proper structure for DKG
       // Put user fields FIRST, then override with required fields
       const dkgReadyJsonLD = {
-        // Include all user-provided fields first
-        ...reportData,
+        // Include all user-provided fields first (cleaned)
+        ...cleanedReportData,
         // Override with required fields to ensure DKG compatibility
         "@context": {
           schema: "https://schema.org/",
@@ -701,6 +709,14 @@ router.post("/:id/publish", async (req, res) => {
     // Parse the user's JSON-LD data
     const reportJsonLD = JSON.parse(report.jsonld_data);
 
+    // Filter out null/undefined values from user data to avoid JSON-LD errors
+    const cleanedReportData = Object.entries(reportJsonLD).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
     // Normalize JSON-LD to ensure DKG safe mode compatibility
     // Put required fields FIRST, then merge with user data
     const dkgReadyJsonLD = {
@@ -727,8 +743,10 @@ router.post("/:id/publish", async (req, res) => {
       "dkg:reportId": reportId,
       "dkg:premiumPrice": report.premium_price_trac,
       "dkg:payeeWallet": report.payee_wallet,
-      // Include all other user-provided fields
-      ...reportJsonLD
+      // Add private data hash if exists
+      ...(report.private_data_hash && { "dkg:privateDataHash": report.private_data_hash }),
+      // Include all other user-provided fields (cleaned)
+      ...cleanedReportData
     };
 
     console.log(`📤 Publishing premium report #${reportId} with parent UAL linkage: ${proposal.ual}`);

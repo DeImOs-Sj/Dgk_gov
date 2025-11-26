@@ -18,27 +18,26 @@ export async function verifyReport(proposalData, submittedJSONLD, referendumInde
     // Parse the JSON-LD if it's a string
     const reportData = typeof submittedJSONLD === 'string' ? JSON.parse(submittedJSONLD) : submittedJSONLD;
 
-    const prompt = `You are validating a community-submitted report about Polkadot Governance Referendum #${referendumIndex}.
+    const prompt = `Validate this JSON-LD report for Referendum #${referendumIndex}.
 
-ORIGINAL PROPOSAL DATA:
+PROPOSAL:
 ${JSON.stringify(proposalData, null, 2)}
 
-SUBMITTED REPORT JSON-LD:
+REPORT:
 ${JSON.stringify(reportData, null, 2)}
 
-Please verify the following:
-1. Is the JSON-LD properly formatted with @context, @type, and @id?
-2. Does it reference or relate to the correct proposal (Referendum #${referendumIndex})?
-3. Are the claims reasonable and verifiable based on the proposal context?
-4. Does it contain harmful, spam, or clearly malicious content?
-5. Does it provide meaningful additional information about the proposal?
+Check:
+1. Has @context, @type, and @id
+2. References Referendum #${referendumIndex}
+3. Claims are reasonable
+4. No spam or harmful content
 
-Respond ONLY with valid JSON in this exact format:
+Response format:
 {
   "valid": true/false,
   "confidence": 0.0-1.0,
-  "issues": ["list of specific issues if any"],
-  "reasoning": "brief explanation of your decision"
+  "issues": ["issue1", "issue2"],
+  "reasoning": "brief explanation"
 }`;
 
     console.log('\n' + '='.repeat(80));
