@@ -300,11 +300,23 @@ console.log('Auth Message:', authMessage,authSignature);
               </div>
 
               <div style={styles.jsonldContainer}>
-                <h4>Report Content (JSON-LD)</h4>
+                <h4>Public Report Content (JSON-LD)</h4>
                 <pre style={styles.jsonld}>
                   {JSON.stringify(JSON.parse(expandedReport.jsonld_data), null, 2)}
                 </pre>
               </div>
+
+              {expandedReport.private_jsonld_data && (
+                <div style={styles.jsonldContainer}>
+                  <h4>Private Report Content (JSON-LD)</h4>
+                  <div style={styles.privateDataBanner}>
+                    🔒 This private data is only stored locally and never sent to AI or DKG
+                  </div>
+                  <pre style={styles.jsonld}>
+                    {JSON.stringify(JSON.parse(expandedReport.private_jsonld_data), null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -529,6 +541,16 @@ const styles = {
   },
   jsonldContainer: {
     marginTop: '1rem'
+  },
+  privateDataBanner: {
+    backgroundColor: '#fff3cd',
+    border: '1px solid #ffc107',
+    borderRadius: '4px',
+    padding: '0.75rem',
+    marginBottom: '1rem',
+    fontSize: '0.875rem',
+    color: '#856404',
+    fontWeight: '500'
   },
   jsonld: {
     backgroundColor: '#f8f9fa',
