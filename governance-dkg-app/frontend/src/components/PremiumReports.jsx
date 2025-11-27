@@ -18,6 +18,9 @@ const PremiumReports = ({ proposalIndex, userWallet, authSignature, authMessage,
   const [expandedReport, setExpandedReport] = useState(null);
   console.log(userWallet)
 
+
+
+
   useEffect(() => {
     fetchPremiumReports();
   }, [proposalIndex, userWallet, refreshKey]);
@@ -155,9 +158,9 @@ console.log('Auth Message:', authMessage,authSignature);
     return <div style={styles.loading}>Loading premium reports...</div>;
   }
 
-  if (error) {
-    return <div> Transaction Successful</div>;
-  }
+
+
+
 
   if (premiumReports.length === 0) {
     return (

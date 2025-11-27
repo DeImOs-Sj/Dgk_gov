@@ -393,7 +393,7 @@ function ProposalDetail() {
                   <button
                     onClick={publishDirectAPI}
                     disabled={submitting}
-                    className="px-6 py-3 text-sm font-bold text-black bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-pink-500/40 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="px-6 py-3 text-sm font-bold bg-green-500 text-black  rounded-full  transition-all duration-300 shadow-xl "
                   >
                     {submitting ? 'Publishing...' : 'Publish to DKG (Recommended)'}
                   </button>

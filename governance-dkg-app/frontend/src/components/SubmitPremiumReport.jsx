@@ -473,7 +473,7 @@ const SubmitPremiumReport = ({ proposalIndex,proposalUal, userWallet, authSignat
               </div>
               <div style={styles.feeRow}>
                 <span>Submission fee (stake):</span>
-                <strong>{calculateFee()} TRAC</strong>
+                <strong>{calculateFee()} USDC</strong>
               </div>
               <div style={styles.feeNote}>
                 💰 In production, you would stake the required TRAC tokens to confirm your submission.
