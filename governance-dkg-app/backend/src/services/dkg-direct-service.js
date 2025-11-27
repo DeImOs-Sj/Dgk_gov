@@ -27,6 +27,9 @@ export async function publishAssetDirect(jsonldContent, metadata = {}, progressC
     }
   };
 
+  console.log('📋 JSON-LD to publish:');
+  console.log(JSON.stringify(jsonldContent, null, 2));
+
   try {
     updateProgress(1, 'Preparing knowledge asset for DKG publication', {
       contentType: jsonldContent['@type'],

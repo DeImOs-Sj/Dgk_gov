@@ -27,8 +27,6 @@ REPORT:
 ${JSON.stringify(reportData, null, 2)}
 
 Check:
-1. Has @context, @type, and @id
-2. References Referendum #${referendumIndex}
 3. Claims are reasonable
 4. No spam or harmful content
 
@@ -103,6 +101,8 @@ Response format:
       console.log(`   Issues: ${result.issues.join(', ')}`);
     }
     console.log('='.repeat(80) + '\n');
+
+    console.log('✅ AI verification completed successfully.',result);
 
     return result;
 

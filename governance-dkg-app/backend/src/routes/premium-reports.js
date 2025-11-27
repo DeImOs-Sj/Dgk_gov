@@ -532,24 +532,33 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
       }
 
       // Filter out null/undefined values from user data to avoid JSON-LD errors
+      // Also stringify complex nested objects that aren't valid JSON-LD
       const cleanedReportData = Object.entries(reportData).reduce((acc, [key, value]) => {
         if (value !== null && value !== undefined) {
-          acc[key] = value;
+          // Skip JSON-LD reserved keys - they'll be set explicitly
+          if (key === '@context' || key === '@type' || key === '@id') {
+            return acc;
+          }
+
+          // If value is a plain object or array (not a JSON-LD entity), stringify it
+          // JSON-LD entities have @type or @id fields
+          if (typeof value === 'object' && !value['@type'] && !value['@id']) {
+            acc[key] = JSON.stringify(value);
+          } else {
+            acc[key] = value;
+          }
         }
         return acc;
       }, {});
 
       // Ensure JSON-LD has proper structure for DKG
-      // Put user fields FIRST, then override with required fields
+      // Build a clean JSON-LD object with ONLY properly namespaced fields
       const dkgReadyJsonLD = {
-        // Include all user-provided fields first (cleaned)
-        ...cleanedReportData,
-        // Override with required fields to ensure DKG compatibility
         "@context": {
           schema: "https://schema.org/",
           polkadot: "https://polkadot.network/governance/",
           dkg: "https://dkg.origintrail.io/",
-          ...(reportData["@context"] || {}),
+          ...(typeof reportData["@context"] === "object" && !Array.isArray(reportData["@context"]) ? reportData["@context"] : {}),
         },
         "@type": "schema:Report",
         "@id":
@@ -570,6 +579,21 @@ router.post("/:id/verify-and-publish", authenticateWallet, async (req, res) => {
         // Add private data hash if exists
         ...(privateHash && { "dkg:privateDataHash": privateHash }),
       };
+
+      // Add user's custom fields (already cleaned and stringified)
+      // Only include fields that have proper namespace prefixes
+      Object.entries(cleanedReportData).forEach(([key, value]) => {
+        // Skip if already set above
+        if (!dkgReadyJsonLD.hasOwnProperty(key)) {
+          // If key has a namespace prefix (contains ':'), use as-is
+          if (key.includes(':')) {
+            dkgReadyJsonLD[key] = value;
+          } else {
+            // For non-namespaced keys, add them under dkg namespace
+            dkgReadyJsonLD[`dkg:${key}`] = value;
+          }
+        }
+      });
 
       // Publish to DKG
       const dkgResult = await publishAssetDirect(
@@ -710,21 +734,33 @@ router.post("/:id/publish", async (req, res) => {
     const reportJsonLD = JSON.parse(report.jsonld_data);
 
     // Filter out null/undefined values from user data to avoid JSON-LD errors
+    // Also stringify complex nested objects that aren't valid JSON-LD
     const cleanedReportData = Object.entries(reportJsonLD).reduce((acc, [key, value]) => {
       if (value !== null && value !== undefined) {
-        acc[key] = value;
+        // Skip JSON-LD reserved keys - they'll be set explicitly
+        if (key === '@context' || key === '@type' || key === '@id') {
+          return acc;
+        }
+
+        // If value is a plain object or array (not a JSON-LD entity), stringify it
+        // JSON-LD entities have @type or @id fields
+        if (typeof value === 'object' && !value['@type'] && !value['@id']) {
+          acc[key] = JSON.stringify(value);
+        } else {
+          acc[key] = value;
+        }
       }
       return acc;
     }, {});
 
     // Normalize JSON-LD to ensure DKG safe mode compatibility
-    // Put required fields FIRST, then merge with user data
+    // Build a clean JSON-LD object with ONLY properly namespaced fields
     const dkgReadyJsonLD = {
       "@context": {
         "schema": "https://schema.org/",
         "polkadot": "https://polkadot.network/governance/",
         "dkg": "https://dkg.origintrail.io/",
-        ...(typeof reportJsonLD["@context"] === "object" ? reportJsonLD["@context"] : {})
+        ...(typeof reportJsonLD["@context"] === "object" && !Array.isArray(reportJsonLD["@context"]) ? reportJsonLD["@context"] : {})
       },
       "@type": reportJsonLD["@type"] || "schema:Report",
       "@id": reportJsonLD["@id"] || `polkadot:referendum:${report.referendum_index}:premium-report:${reportId}`,
@@ -745,9 +781,22 @@ router.post("/:id/publish", async (req, res) => {
       "dkg:payeeWallet": report.payee_wallet,
       // Add private data hash if exists
       ...(report.private_data_hash && { "dkg:privateDataHash": report.private_data_hash }),
-      // Include all other user-provided fields (cleaned)
-      ...cleanedReportData
     };
+
+    // Add user's custom fields (already cleaned and stringified)
+    // Only include fields that have proper namespace prefixes
+    Object.entries(cleanedReportData).forEach(([key, value]) => {
+      // Skip if already set above
+      if (!dkgReadyJsonLD.hasOwnProperty(key)) {
+        // If key has a namespace prefix (contains ':'), use as-is
+        if (key.includes(':')) {
+          dkgReadyJsonLD[key] = value;
+        } else {
+          // For non-namespaced keys, add them under dkg namespace
+          dkgReadyJsonLD[`dkg:${key}`] = value;
+        }
+      }
+    });
 
     console.log(`📤 Publishing premium report #${reportId} with parent UAL linkage: ${proposal.ual}`);
 
