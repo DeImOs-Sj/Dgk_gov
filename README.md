@@ -69,6 +69,219 @@ DotGraph acts as a **Truth Layer** for OpenGov, providing:
 - **Reporter Monetization**: x402 protocol allows reporters to monetize high-value, private intelligence while keeping metadata public
 - **Quality Barriers**: Staking prevents spam while ensuring reporters are compensated for due diligence
 
+## 💳 X402 Payment Protocol Integration
+
+DotGraph implements the **X402 payment protocol** to enable micropayments for premium governance reports, creating a sustainable monetization model for community auditors and governance analysts.
+
+### What is X402?
+
+X402 is a cryptographic payment protocol that extends HTTP with a `402 Payment Required` status code. When a client requests protected content, the server responds with payment requirements, the client's wallet automatically signs and submits payment proof, and the server grants access—all seamlessly within a single request flow.
+
+### Implementation Architecture
+
+#### Plugin Layer (DKG Node)
+- **Location**: `my_dkg_node/dkg-node/packages/plugin-x402/`
+- **Purpose**: MCP plugin that enables the DKG node to consume x402-protected APIs
+- **Features**:
+  - Automatic payment interceptor for HTTP 402 responses
+  - Viem wallet integration for Base network payments
+  - MCP tool (`x402-get-data`) for AI agents
+  - REST endpoints (`/x402/data`, `/x402/status`)
+
+#### Backend Middleware
+- **Location**: `governance-dkg-app/backend/src/middleware/x402-config.js`
+- **Purpose**: Protects premium report endpoints with payment requirements
+- **Configuration**:
+  - Network: **Base Sepolia** testnet (Chain ID: 84532)
+  - Currency: **USDC** (Contract: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`)
+  - Default Price: **$0.10 USDC** per premium report
+  - Settlement: Currently uses `skipSettlement: true` for demo purposes
+
+#### Frontend Integration
+- **Location**: `governance-dkg-app/frontend/src/utils/x402-payment.js`
+- **Purpose**: Client-side payment automation using MetaMask
+- **Key Functions**:
+  - `getPremiumReportWithX402()`: Simplified GET flow with automatic payment
+  - `createViemWalletClient()`: MetaMask to Viem wallet conversion
+  - Uses `x402-fetch` library to wrap standard fetch with payment handling
+
+### Payment Flow
+
+1. **User Requests Premium Content**
+   ```
+   GET /api/premium-reports/{id}?wallet={address}
+   ```
+
+2. **Server Returns 402 Payment Required**
+   ```json
+   {
+     "statusCode": 402,
+     "price": 0.10,
+     "currency": "USDC",
+     "reportName": "Q4 Treasury Analysis",
+     "metadata": { /* public preview data */ }
+   }
+   ```
+
+3. **X402 Library Auto-Handles Payment**
+   - Prompts MetaMask for payment signature
+   - Creates payment proof on Base Sepolia
+   - Adds `X-Payment-Proof` header to retry request
+
+4. **Server Verifies & Grants Access**
+   - Validates payment proof signature
+   - Records access in database
+   - Returns full premium report content
+
+### Configuration
+
+#### DKG Node X402 Plugin
+
+`my_dkg_node/dkg-node/apps/agent/.env.development.local`:
+```bash
+# X402 Client Configuration (for consuming paid APIs)
+X402_PRIVATE_KEY=0x...                    # Wallet private key
+X402_RESOURCE_SERVER_URL=https://...      # Target paid API
+X402_ENDPOINT_PATH=/data                  # Default endpoint
+```
+
+#### Backend Payment Server
+
+`governance-dkg-app/backend/.env`:
+```bash
+# X402 Server Configuration (for selling premium reports)
+BASE_SEPOLIA_CHAIN_ID=84532
+BASE_SEPOLIA_USDC=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+PREMIUM_REPORT_PRICE_USDC=0.10           # Default price
+```
+
+### Use Cases
+
+#### For Governance Reporters
+- **Monetize Deep Dives**: Charge for comprehensive audit reports while keeping basic metadata public
+- **Tiered Access**: Public summaries free, detailed analysis paid
+- **Automatic Revenue**: No manual payment processing or tipping requests
+
+#### For Governance Consumers
+- **Pay-Per-Report**: Only pay for reports you actually need
+- **Micropayments**: Low barrier to entry ($0.10 vs subscription models)
+- **Seamless UX**: Payment happens automatically via MetaMask
+
+#### For the Ecosystem
+- **Sustainable Reporting**: Creates economic incentives for quality governance analysis
+- **Reputation + Revenue**: Reporters build on-chain track record while earning
+- **Cross-Platform**: Any app can consume DKG reports via x402 protocol
+
+### Premium Report Management
+
+#### Creating Premium Reports
+
+```bash
+cd governance-dkg-app
+node create-premium-report.js
+```
+
+#### Viewing Access Records
+
+```bash
+node view-premium-access.js
+```
+
+#### Managing User Access
+
+```bash
+# Grant access manually
+node restore-premium-access.js
+
+# Revoke access
+node revoke-premium-access.js
+```
+
+### Technical Details
+
+#### Payment Verification Service
+- **Location**: `backend/src/services/x402-payment-service.js`
+- **Signature Verification**: Uses `ethers.verifyMessage()` to recover signer address
+- **Message Validation**: Ensures payment message contains correct report ID, wallet, amount, and timestamp
+- **Access Control**: Maintains `premium_access` table with grant/revoke capabilities
+- **Anti-Replay**: 24-hour message expiry prevents signature reuse
+
+#### Database Schema
+```sql
+-- Premium access tracking
+CREATE TABLE premium_access (
+  access_id INTEGER PRIMARY KEY,
+  report_id INTEGER,
+  user_wallet TEXT,
+  payment_signature TEXT,
+  payment_message TEXT,
+  paid_amount_trac REAL,
+  payment_tx_hash TEXT,
+  access_granted BOOLEAN,
+  granted_at TEXT,
+  FOREIGN KEY (report_id) REFERENCES reports(report_id)
+);
+```
+
+### Testing with Base Sepolia
+
+1. **Get Testnet ETH**
+   - Visit [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-sepolia-faucet)
+   - Request ETH for gas fees
+
+2. **Get Testnet USDC**
+   - Bridge Sepolia ETH to Base Sepolia
+   - Swap for USDC on testnet DEX
+
+3. **Connect MetaMask**
+   - Network: Base Sepolia
+   - Chain ID: 84532
+   - RPC: `https://sepolia.base.org`
+
+4. **Test Payment Flow**
+   - Browse to premium report in UI
+   - Click "Purchase Access"
+   - Approve MetaMask signature
+   - Access granted automatically
+
+### Future Enhancements
+
+- **On-Chain Settlement**: Enable actual USDC transfers with proper EIP-712 signing
+- **Dynamic Pricing**: Adjust prices based on report complexity or data size
+- **Bulk Discounts**: Offer package deals for multiple reports
+- **Subscription Model**: Monthly access passes for governance analysts
+- **Revenue Sharing**: Split payments between reporter and DKG node operators
+
+### Troubleshooting
+
+#### MetaMask Not Connecting
+```
+Error: MetaMask not installed
+```
+- Install [MetaMask browser extension](https://metamask.io)
+- Refresh page after installation
+
+#### Wrong Network
+```
+Error: Please switch to Base Sepolia
+```
+- Open MetaMask
+- Switch network to Base Sepolia (Chain ID: 84532)
+
+#### Insufficient USDC
+```
+Error: Insufficient USDC balance
+```
+- Check USDC balance on Base Sepolia
+- Get testnet USDC from faucet
+
+#### Payment Already Made
+```
+Error: You already have access to this report
+```
+- Access already granted
+- View report directly without re-paying
+
 ## 🏗️ Architecture
 
 This project implements the **three-layer architecture** required by the hackathon:
